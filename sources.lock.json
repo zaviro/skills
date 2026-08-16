@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "skills": {
+    "browser-use": {
+      "localPath": "browser-use",
+      "policy": "mirror",
+      "source": {
+        "type": "github",
+        "repo": "browser-use/browser-use",
+        "ref": "main",
+        "path": "skills/browser-use",
+        "treeSha": "54b735c6bcd987969b79e23e91849429c7188928"
+      }
+    },
+    "find-skills": {
+      "localPath": "find-skills",
+      "policy": "mirror",
+      "source": {
+        "type": "github",
+        "repo": "vercel-labs/skills",
+        "ref": "main",
+        "path": "skills/find-skills",
+        "treeSha": "76a98a285cb0434f3d39e1a873823556330e398b"
+      }
+    },
+    "skill-creator": {
+      "localPath": "skill-creator",
+      "policy": "patched",
+      "base": {
+        "type": "github",
+        "repo": "anthropics/skills",
+        "ref": "main",
+        "path": "skills/skill-creator",
+        "treeSha": "3cf9a8db32597ba3e24b584a3d696f4e11c7d7b6",
+        "skillMdBlobSha": "65b3a402dbd09b8e83f9d637c6b553875189085c"
+      },
+      "overlays": [
+        {
+          "source": {
+            "type": "github",
+            "repo": "openai/skills",
+            "ref": "main",
+            "path": "skills/.system/skill-creator/SKILL.md",
+            "skillMdBlobSha": "72bc0b97e7a6476254a9d5c424c9971748402ec3"
+          },
+          "sections": [
+            "Concise is Key",
+            "Protect Validation Integrity"
+          ]
+        }
+      ],
+      "omittedSections": [
+        "Set Appropriate Degrees of Freedom"
+      ]
+    },
+    "tavily-search": {
+      "localPath": "tavily-search",
+      "policy": "registry",
+      "source": {
+        "type": "clawhub",
+        "registry": "https://clawhub.ai",
+        "slug": "tavily-search",
+        "version": "1.0.0"
+      }
+    }
+  }
+}
