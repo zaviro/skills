@@ -7,7 +7,7 @@ let
     runtimeInputs = [ pkgs.nodejs ];
     text = ''
       exec ${pkgs.nodejs}/bin/node --experimental-strip-types \
-        ${../bin/desktopctl.ts} "$@"
+        ${../scripts/desktopctl.ts} "$@"
     '';
   };
 in
@@ -16,12 +16,11 @@ in
     desktopctl
   ];
 
-  # Optional: make the skills themselves declarative for Codex.
-  # Adjust `../desktop-control` and `../desktop-system` to the real paths
-  # after placing this bundle inside your nix-config repository.
+  # Optional: expose these Skills declaratively at the user-level Agent Skills path.
+  # Adjust the paths if this repository is consumed through another Nix source.
   #
-  # home.file.".codex/skills/desktop-control".source = ../desktop-control;
-  # home.file.".codex/skills/desktop-system".source = ../desktop-system;
+  # home.file.".agents/skills/desktop-control".source = ../.;
+  # home.file.".agents/skills/desktop-system".source = ../../desktop-system;
 
   # Optional Niri runtime-preview hook.
   # Add this at top level to the declaratively generated Niri KDL only if

@@ -88,9 +88,9 @@ Examples include panel toggles, wallpaper/theme actions, volume, brightness, med
 
 Do not edit Noctalia TOML for an operation that is already available through IPC.
 
-## Shared helper
+## Bundled helper
 
-When available, prefer the shared wrapper:
+When available, prefer the `desktopctl` wrapper:
 
 ```sh
 desktopctl doctor
@@ -100,6 +100,16 @@ desktopctl inspect noctalia
 ```
 
 `desktopctl` is a guardrail and discovery layer, not the source of truth.
+
+This Skill owns the helper implementation and its supporting material:
+
+```text
+scripts/desktopctl.ts
+references/desktopctl-contract.md
+examples/home-manager.nix
+```
+
+Read `references/desktopctl-contract.md` before extending the helper. The Home Manager example shows one way to expose both the CLI and Skills declaratively.
 
 ## Safety
 

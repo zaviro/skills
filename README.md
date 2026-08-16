@@ -1,54 +1,58 @@
-# Desktop Agent Skills
+# Agent Skills
 
-This bundle implements the split architecture:
+Personal monorepo for reusable Agent Skills. Every active Skill is a first-class directory at the repository root, regardless of whether it is authored locally, mirrored from upstream, or locally patched.
+
+## Layout
+
+```text
+<skill-name>/
+├── SKILL.md
+├── scripts/       # optional; owned by this Skill
+├── references/    # optional; owned by this Skill
+├── assets/        # optional; owned by this Skill
+└── examples/      # optional; owned by this Skill
+
+disabled/          # inactive Skills kept for reference
+sources.lock.json  # provenance/update policy for external Skills
+README.md
+```
+
+Repository-level directories should contain only genuinely cross-Skill infrastructure. A script, reference, example, or integration used by one Skill belongs inside that Skill.
+
+## Active Skills
+
+- `browser-use`
+- `clipboard-manager`
+- `desktop-control`
+- `desktop-system`
+- `doc-bilingual-translator`
+- `document-processor`
+- `find-skills`
+- `notebooklm-docs`
+- `proton-game-helper`
+- `roadmap-parser`
+- `skill-creator`
+- `tavily-search`
+- `updating-plugin-model`
+- `webdoc-structure-processor`
+
+## Source and update policy
+
+`sources.lock.json` records provenance only for Skills with an external update source:
+
+- `mirror`: local Skill should match the recorded upstream Skill.
+- `patched`: upstream is the base, with explicitly retained local overlays.
+- `registry`: version is managed by an external Skill registry.
+
+Locally authored Skills do not need synthetic upstream entries; Git history is their source of truth.
+
+## Desktop Skills
+
+The desktop capability is split intentionally:
 
 ```text
 desktop-control  → immediate runtime actions
-desktop-system   → declarative configuration/capabilities/iteration
-                       │
-                       └── both may use desktopctl
+desktop-system   → persistent declarative NixOS/Home Manager state
 ```
 
-## Files
-
-```text
-desktop-control/SKILL.md
-desktop-system/SKILL.md
-desktop-system/references/nixos-policy.md
-desktop-system/references/capabilities/dynamic-wallpaper.md
-shared/desktopctl-contract.md
-bin/desktopctl.ts
-nix/home-manager-example.nix
-```
-
-## Why this boundary
-
-`desktop-control` is intentionally low-risk and runtime-only.
-
-`desktop-system` owns persistent NixOS/Home Manager changes, including both scalar configuration changes and larger capability additions. It treats runtime experiments as temporary and promotes only the final desired state into the declarative repository.
-
-`desktopctl` stays small. It wraps official Niri/Noctalia commands for discovery, validation and immediate actions. It does not try to parse/rewrite arbitrary Nix source.
-
-## Initial desktopctl commands
-
-```sh
-desktopctl doctor
-desktopctl inspect noctalia
-desktopctl validate niri
-desktopctl validate noctalia
-desktopctl action niri focus-workspace 3
-desktopctl action noctalia panel-toggle launcher
-desktopctl paths
-```
-
-Before relying on an unfamiliar Niri/Noctalia action, inspect the installed tool's own help because IPC commands can evolve.
-
-## Dynamic wallpaper
-
-The first capability recipe is:
-
-```text
-desktop-system/references/capabilities/dynamic-wallpaper.md
-```
-
-It is intentionally modeled as a capability rather than a Boolean setting, so future features can bring packages, services, shell integration, validation and removal logic without changing the Skill architecture.
+`desktop-control` owns the `desktopctl` implementation and its documentation/examples. `desktop-system` may use the installed `desktopctl` command, but persistent configuration remains owned by the user's declarative Nix source.
