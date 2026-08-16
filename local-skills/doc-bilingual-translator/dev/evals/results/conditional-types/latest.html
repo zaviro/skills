@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark-theme">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conditional Types - Bilingual Edition</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Prism Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    
+    <style>
+        :root {
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'Fira Code', Menlo, Monaco, Consolas, "Courier New", monospace;
+            
+            /* Dark Theme Tokens */
+            --bg-page: #0b0f19;
+            --bg-card: #111827;
+            --bg-sidebar: #0f172a;
+            --bg-header: rgba(15, 23, 42, 0.8);
+            --border-color: #1e293b;
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            --primary-color: #38bdf8;
+            --primary-hover: #0ea5e9;
+            
+            --code-bg: #1e293b;
+            --highlight-bg: rgba(56, 189, 248, 0.1);
+        }
+        
+        .light-theme {
+            /* Light Theme Tokens */
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-sidebar: #f1f5f9;
+            --bg-header: rgba(241, 245, 249, 0.8);
+            --border-color: #e2e8f0;
+            
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            
+            --primary-color: #0284c7;
+            --primary-hover: #0369a1;
+            
+            --code-bg: #f8fafc;
+            --highlight-bg: rgba(2, 132, 199, 0.08);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        
+        html, body {
+            height: 100%;
+            font-family: var(--font-sans);
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        a:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+        
+        /* Sticky Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background-color: var(--bg-header);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+        }
+        
+        .header-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .header-title .tag {
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: var(--highlight-bg);
+            color: var(--primary-color);
+            padding: 2px 8px;
+            border-radius: 9999px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+        
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .segmented-control {
+            display: flex;
+            background: var(--bg-sidebar);
+            border: 1px solid var(--border-color);
+            padding: 3px;
+            border-radius: 8px;
+        }
+        
+        .segment-btn {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .segment-btn.active {
+            background: var(--bg-card);
+            color: var(--primary-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .theme-toggle {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--bg-sidebar);
+            color: var(--text-primary);
+        }
+        
+        /* Main Layout */
+        .container {
+            display: flex;
+            min-height: 100%;
+            padding-top: 64px;
+        }
+        
+        /* Sidebar (TOC) */
+        aside {
+            position: fixed;
+            top: 64px;
+            bottom: 0;
+            left: 0;
+            width: 280px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 24px 16px;
+            display: none;
+        }
+        
+        @media (min-width: 1024px) {
+            aside {
+                display: block;
+            }
+            main {
+                margin-left: 280px;
+            }
+        }
+        
+        .toc-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            padding-left: 12px;
+        }
+        
+        .toc-item {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .toc-item:hover {
+            background-color: var(--bg-page);
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        /* Main Content */
+        main {
+            flex: 1;
+            padding: 40px 24px 80px;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        .content-inner {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+        
+        .block-wrapper {
+            margin-bottom: 24px;
+        }
+        
+        .paragraph-wrapper, .list-item-wrapper, .header-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .view-en .lang-zh,
+        .view-zh .lang-en {
+            display: none !important;
+        }
+        
+        .view-bilingual .lang-en {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            border-left: 3px solid var(--border-color);
+            padding-left: 12px;
+            margin-bottom: 2px;
+        }
+        
+        .view-bilingual .lang-zh {
+            font-size: 1.05rem;
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+        
+        .view-en .lang-en {
+            font-size: 1.05rem;
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+        
+        .view-zh .lang-zh {
+            font-size: 1.05rem;
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+        
+        h1, h2, h3, h4 {
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            color: var(--text-primary);
+            scroll-margin-top: 80px;
+        }
+        
+        h1 { font-size: 2.25rem; margin-top: 40px; margin-bottom: 16px; }
+        h2 { font-size: 1.75rem; margin-top: 36px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        h3 { font-size: 1.35rem; margin-top: 28px; margin-bottom: 10px; }
+        
+        .header-wrapper {
+            margin-top: 24px;
+            margin-bottom: 12px;
+            gap: 4px;
+        }
+        
+        .view-bilingual .header-wrapper .lang-en {
+            font-size: 80%;
+            color: var(--text-secondary);
+            border-left: none;
+            padding-left: 0;
+            font-weight: 600;
+        }
+        
+        .list-item-wrapper {
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .list-bullet {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            line-height: 1.2;
+            user-select: none;
+        }
+        
+        .list-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .code-wrapper {
+            margin: 28px 0;
+        }
+        
+        pre {
+            background-color: var(--code-bg) !important;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            overflow-x: auto;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        code {
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+            background-color: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 6px;
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+        }
+        
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border: none;
+            color: inherit;
+        }
+        
+        .back-to-top {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 90;
+        }
+        
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .back-to-top:hover {
+            background-color: var(--bg-sidebar);
+            color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="view-bilingual">
+
+    <!-- Sticky Header -->
+    <header>
+        <div class="header-title">
+            <span>TypeScript Handbook</span>
+            <span class="tag">Bilingual 对照版</span>
+        </div>
+        
+        <div class="controls">
+            <div class="segmented-control">
+                <button class="segment-btn active" onclick="setViewMode('bilingual')">Bilingual 对照</button>
+                <button class="segment-btn" onclick="setViewMode('en')">English 英文</button>
+                <button class="segment-btn" onclick="setViewMode('zh')">中文</button>
+            </div>
+            
+            <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                <svg id="theme-icon-moon" style="display: none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside>
+            <div class="toc-title">Catalog 目录</div>
+            <a href="#header-0" class="toc-item" style="padding-left: 12px;">Conditional Type Constraints</a>
+<a href="#header-1" class="toc-item" style="padding-left: 12px;">Inferring Within Conditional Types</a>
+<a href="#header-2" class="toc-item" style="padding-left: 12px;">Distributive Conditional Types</a>
+
+        </aside>
+
+        <main>
+            <div class="content-inner">
+                <div class="block-wrapper header-wrapper" style="margin-top: 0; margin-bottom: 32px;">
+                    <h1 class="lang-en">Conditional Types</h1>
+                    <h1 class="lang-zh">Conditional Types</h1>
+                </div>
+                
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">At the heart of most useful programs, we have to make decisions based on input.<br>JavaScript programs are no different, but given the fact that values can be easily introspected, those decisions are also based on the types of the inputs.<br>_Conditional types_ help describe the relation between the types of inputs and outputs.</p>
+                            <p class="lang-zh">在大多数实用的程序中，我们必须根据输入做出决策。<br>JavaScript 程序也是如此，但鉴于值可以很容易地被内省，这些决策也基于输入的类型。<br>_条件类型_ 帮助描述输入和输出类型之间的关系。</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">interface Animal {
+  live(): void;
+}
+interface Dog extends Animal {
+  woof(): void;
+}
+
+type Example1 = Dog extends Animal ? number : string;
+//   ^?
+
+type Example2 = RegExp extends Animal ? number : string;
+//   ^?</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">Conditional types take a form that looks a little like conditional expressions (<code>condition ? trueExpression : falseExpression</code>) in JavaScript:</p>
+                            <p class="lang-zh">条件类型 的形式看起来有点像 JavaScript 中的条件表达式（<code>condition ? trueExpression : falseExpression</code>）：</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">type SomeType = any;
+type OtherType = any;
+type TrueType = any;
+type FalseType = any;
+type Stuff =
+  // ---cut---
+  SomeType extends OtherType ? TrueType : FalseType;</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">When the type on the left of the <code>extends</code> is assignable to the one on the right, then you&#x27;ll get the type in the first branch (the &quot;true&quot; branch); otherwise you&#x27;ll get the type in the latter branch (the &quot;false&quot; branch).</p>
+                            <p class="lang-zh">当 <code>extends</code> 左侧的类型可分配给右侧的类型时，你将获得第一个分支（“true” 分支）中的类型；否则你将获得后一个分支（“false” 分支）中的类型。</p>
+                        </div>
+                        
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">From the examples above, conditional types might not immediately seem useful - we can tell ourselves whether or not <code>Dog extends Animal</code> and pick <code>number</code> or <code>string</code>!<br>But the power of conditional types comes from using them with generics.</p>
+                            <p class="lang-zh">从上面的例子来看，条件类型 可能不会立即显得有用 —— 我们自己就能知道 <code>Dog extends Animal</code> 是否成立，并选择 <code>number</code> 或 <code>string</code>！<br>但 条件类型 的强大之处在于将它们与泛型结合使用。</p>
+                        </div>
+                        
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">For example, let&#x27;s take the following <code>createLabel</code> function:</p>
+                            <p class="lang-zh">例如，让我们来看看以下 <code>createLabel</code> 函数：</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">interface IdLabel {
+  id: number /* some fields */;
+}
+interface NameLabel {
+  name: string /* other fields */;
+}
+
+function createLabel(id: number): IdLabel;
+function createLabel(name: string): NameLabel;
+function createLabel(nameOrId: string | number): IdLabel | NameLabel;
+function createLabel(nameOrId: string | number): IdLabel | NameLabel {
+  throw &quot;unimplemented&quot;;
+}</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">These overloads for createLabel describe a single JavaScript function that makes a choice based on the types of its inputs. Note a few things:</p>
+                            <p class="lang-zh">这些用于 createLabel 的 重载 描述了一个根据其输入类型进行选择的单个 JavaScript 函数。注意以下几点：</p>
+                        </div>
+                        
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">1. If a library has to make the same sort of choice over and over throughout its API, this becomes cumbersome.<br>2. We have to create three overloads: one for each case when we&#x27;re _sure_ of the type (one for <code>string</code> and one for <code>number</code>), and one for the most general case (taking a <code>string | number</code>). For every new type <code>createLabel</code> can handle, the number of overloads grows exponentially.</p>
+                            <p class="lang-zh">1. 如果一个库在其整个 API 中必须一遍又一遍地做出相同的选择，这会变得非常繁琐。<br>2. 我们必须创建三个 重载：当我们可以 _确定_ 类型时的每种情况各一个（一个用于 <code>string</code>，一个用于 <code>number</code>），以及最通用情况的一个（接受 <code>string | number</code>）。对于 <code>createLabel</code> 可以处理的每个新类型，重载 的数量都会呈指数增长。</p>
+                        </div>
+                        
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">Instead, we can encode that logic in a conditional type:</p>
+                            <p class="lang-zh">相反，我们可以将该逻辑编码在一个 条件类型 中：</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">interface IdLabel {
+  id: number /* some fields */;
+}
+interface NameLabel {
+  name: string /* other fields */;
+}
+// ---cut---
+type NameOrId&lt;T extends number | string&gt; = T extends number
+  ? IdLabel
+  : NameLabel;</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">We can then use that conditional type to simplify our overloads down to a single function with no overloads.</p>
+                            <p class="lang-zh">然后，我们可以使用该 条件类型 将我们的 重载 简化为一个没有 重载 的单一函数。</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">interface IdLabel {
+  id: number /* some fields */;
+}
+interface NameLabel {
+  name: string /* other fields */;
+}
+type NameOrId&lt;T extends number | string&gt; = T extends number
+  ? IdLabel
+  : NameLabel;
+// ---cut---
+function createLabel&lt;T extends number | string&gt;(idOrName: T): NameOrId&lt;T&gt; {
+  throw &quot;unimplemented&quot;;
+}
+
+let a = createLabel(&quot;typescript&quot;);
+//  ^?
+
+let b = createLabel(2.8);
+//  ^?
+
+let c = createLabel(Math.random() ? &quot;hello&quot; : 42);
+//  ^?</code></pre>
+                </div>
+                
+                    <div class="block-wrapper header-wrapper" id="header-0">
+                        <h2 class="lang-en">Conditional Type Constraints</h2>
+                        <h2 class="lang-zh">条件类型约束</h2>
+                    </div>
+                    
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">Often, the checks in a conditional type will provide us with some new information.<br>Just like narrowing with type guards can give us a more specific type, the true branch of a conditional type will further constrain generics by the type we check against.</p>
+                            <p class="lang-zh">通常，条件类型 中的检查会为我们提供一些新信息。<br>就像使用类型守卫（type guards）收窄可以得到更具体的类型一样，条件类型 的 true 分支会通过我们检查的类型进一步约束泛型。</p>
+                        </div>
+                        
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">For example, let&#x27;s take the following:</p>
+                            <p class="lang-zh">例如，让我们来看看以下内容：</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">// @errors: 2339
+type MessageOf&lt;T&gt; = T[&quot;message&quot;];</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">In this example, TypeScript errors because <code>T</code> is not known to have a property called <code>message</code>.<br>We could constrain <code>T</code>, and TypeScript would no longer complain:</p>
+                            <p class="lang-zh">在这个例子中，TypeScript 报错，因为 <code>T</code> 未被确定具有名为 <code>message</code> 的属性。<br>我们可以约束 <code>T</code>，这样 TypeScript 就不会再报错了：</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">type MessageOf&lt;T extends { message: unknown }&gt; = T[&quot;message&quot;];
+
+interface Email {
+  message: string;
+}
+
+type EmailMessageContents = MessageOf&lt;Email&gt;;
+//   ^?</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">However, what if we wanted <code>MessageOf</code> to take any type, and default to <code>never</code> if a <code>message</code> property wasn&#x27;t available?<br>We can do this by moving the constraint out and introducing a conditional type:</p>
+                            <p class="lang-zh">然而，如果我们想让 <code>MessageOf</code> 接受 any 类型，并且在 <code>message</code> 属性不可用时默认返回 <code>never</code> 呢？<br>我们可以通过将约束移出并引入一个 条件类型 来做到这一点：</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">type MessageOf&lt;T&gt; = T extends { message: unknown } ? T[&quot;message&quot;] : never;
+
+interface Email {
+  message: string;
+}
+
+interface Dog {
+  bark(): void;
+}
+
+type EmailMessageContents = MessageOf&lt;Email&gt;;
+//   ^?
+
+type DogMessageContents = MessageOf&lt;Dog&gt;;
+//   ^?</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">Within the true branch, TypeScript knows <code>T</code> _will_ have a <code>message</code> property.</p>
+                            <p class="lang-zh">在 true 分支内，TypeScript 知道 <code>T</code> _一定_ 会有 <code>message</code> 属性。</p>
+                        </div>
+                        
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">As another example, we could also create a type called <code>Flatten</code> that flattens array types to their element types, but leaves them alone otherwise:</p>
+                            <p class="lang-zh">作为另一个例子，我们还可以创建一个名为 <code>Flatten</code> 的类型，它将数组类型扁平化为它们的元素类型，否则保持原样：</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">type Flatten&lt;T&gt; = T extends any[] ? T[number] : T;
+
+// Extracts the element type.
+type Str = Flatten&lt;string[]&gt;;
+//   ^?
+
+// Leaves the type alone.
+type Num = Flatten&lt;number&gt;;
+//   ^?</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">When <code>Flatten</code> is given an array type, it uses an indexed access with <code>number</code> to fetch the <code>string[]</code>&#x27;s element type.<br>Otherwise, it just returns the type it was given.</p>
+                            <p class="lang-zh">当给 <code>Flatten</code> 传入一个数组类型时，它会使用 <code>number</code> 进行索引访问，以获取 <code>string[]</code> 的元素类型。<br>否则，它只返回传入的类型。</p>
+                        </div>
+                        
+                    <div class="block-wrapper header-wrapper" id="header-1">
+                        <h2 class="lang-en">Inferring Within Conditional Types</h2>
+                        <h2 class="lang-zh">在条件类型中推断</h2>
+                    </div>
+                    
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">Conditional types provide us with a way to infer from types we compare against in the true branch using the <code>infer</code> keyword.<br>For example, we could have inferred the element type in <code>Flatten</code> instead of fetching it &quot;manually&quot; with an indexed access type:</p>
+                            <p class="lang-zh">条件类型 为我们提供了一种在 true 分支中，使用 <code>infer</code> 关键字从与之比较的类型中进行 infer 的方法。<br>例如，我们本可以 infer <code>Flatten</code> 中的元素类型，而不是通过索引访问类型“手动”获取它：</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">type Flatten&lt;Type&gt; = Type extends Array&lt;infer Item&gt; ? Item : Type;</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">Here, we used the <code>infer</code> keyword to declaratively introduce a new generic type variable named <code>Item</code> instead of specifying how to retrieve the element type of <code>Type</code> within the true branch.<br>This frees us from having to think about how to dig through and probing the structure of the types we&#x27;re interested in.</p>
+                            <p class="lang-zh">在这里，我们使用 <code>infer</code> 关键字声明式地引入了一个名为 <code>Item</code> 的新泛型类型变量，而不是在 true 分支内指定如何获取 <code>Type</code> 的元素类型。<br>这使我们无需再去思考如何挖掘和探测我们所关注的类型的结构。</p>
+                        </div>
+                        
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">We can write some useful helper type aliases using the <code>infer</code> keyword.<br>For example, for simple cases, we can extract the return type of a function type:</p>
+                            <p class="lang-zh">我们可以使用 <code>infer</code> 关键字编写一些有用的辅助类型别名。<br>例如，在简单的情况下，我们可以提取一个函数类型的返回类型：</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">type GetReturnType&lt;Type&gt; = Type extends (...args: any[]) =&gt; infer Return
+  ? Return
+  : any;
+
+type Num = GetReturnType&lt;() =&gt; number&gt;;
+//   ^?
+
+type Str = GetReturnType&lt;(x: string) =&gt; string&gt;;
+//   ^?
+
+type Bools = GetReturnType&lt;(a: boolean, b: boolean) =&gt; boolean[]&gt;;
+//   ^?</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">When inferring from a type with multiple call signatures (such as the type of an overloaded function), inferences are made from the *last* signature (which, presumably, is the most permissive catch-all case). It is not possible to perform overload resolution based on a list of argument types.</p>
+                            <p class="lang-zh">当从具有多个调用签名的类型（例如重载函数的类型）中进行 infer 时，推断 将从 * 最后一个 * 签名中做出（据推测，这是最宽泛的捕获所有情况的签名）。无法根据参数类型列表进行重载解析。</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">declare function stringOrNum(x: string): number;
+declare function stringOrNum(x: number): string;
+declare function stringOrNum(x: string | number): string | number;
+
+type T1 = GetReturnType&lt;typeof stringOrNum&gt;;
+//   ^?</code></pre>
+                </div>
+                
+                    <div class="block-wrapper header-wrapper" id="header-2">
+                        <h2 class="lang-en">Distributive Conditional Types</h2>
+                        <h2 class="lang-zh">分布式条件类型</h2>
+                    </div>
+                    
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">When conditional types act on a generic type, they become *distributive* when given a union type.<br>For example, take the following:</p>
+                            <p class="lang-zh">当 条件类型 作用于泛型类型时，如果传入联合类型，它们就会变成 * 分布式 * 的。<br>例如，看下面的例子：</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">type ToArray&lt;Type&gt; = Type extends any ? Type[] : never;</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">If we plug a union type into <code>ToArray</code>:</p>
+                            <p class="lang-zh">如果我们将一个联合类型传入 <code>ToArray</code>：</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">type ToArray&lt;Type&gt; = Type extends any ? Type[] : never;
+// ---cut---
+type StrArrOrNumArr = ToArray&lt;string | number&gt;;
+//   ^?</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">what happens is that <code>ToArray</code> distributes on each member type of the union and maps that to the equivalent of:</p>
+                            <p class="lang-zh">实际发生的是，<code>ToArray</code> 会分发到联合类型的每个成员类型上，并将其映射为等同于：</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">  ToArray&lt;string&gt; | ToArray&lt;number&gt;;</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">which leaves us with:</p>
+                            <p class="lang-zh">这使我们得到：</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">type StrArrOrNumArr =
+  // ---cut---
+  string[] | number[];</code></pre>
+                </div>
+                
+                        <div class="block-wrapper paragraph-wrapper">
+                            <p class="lang-en">Typically, distributivity is the desired behavior.<br>To avoid that behavior, you can surround each side of the <code>extends</code> keyword with square brackets.</p>
+                            <p class="lang-zh">通常，分布式是预期的行为。<br>为了避免该行为，你可以用方括号包围 <code>extends</code> 关键字的两侧。</p>
+                        </div>
+                        
+                <div class="block-wrapper code-wrapper">
+                    <pre><code class="language-typescript">type ToArrayNonDist&lt;Type&gt; = [Type] extends [any] ? Type[] : never;
+
+// &#x27;ArrOfStrOrNum&#x27; is no longer a union.
+type ArrOfStrOrNum = ToArrayNonDist&lt;string | number&gt;;
+//   ^?</code></pre>
+                </div>
+                
+            </div>
+        </main>
+    </div>
+
+    <button class="back-to-top" id="btn-back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="返回顶部">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+    </button>
+
+    <!-- Prism JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+
+    <script>
+        function setViewMode(mode) {
+            document.body.className = '';
+            document.body.classList.add('view-' + mode);
+            
+            const buttons = document.querySelectorAll('.segment-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            const activeBtn = Array.from(buttons).find(btn => btn.getAttribute('onclick').includes(mode));
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+
+        function toggleTheme() {
+            const htmlEl = document.documentElement;
+            const sunIcon = document.getElementById('theme-icon-sun');
+            const moonIcon = document.getElementById('theme-icon-moon');
+            
+            if (htmlEl.classList.contains('light-theme')) {
+                htmlEl.classList.remove('light-theme');
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            } else {
+                htmlEl.classList.add('light-theme');
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            }
+        }
+
+        window.addEventListener('scroll', () => {
+            const btn = document.getElementById('btn-back-to-top');
+            if (window.scrollY > 300) {
+                btn.classList.add('visible');
+            } else {
+                btn.classList.remove('visible');
+            }
+        });
+    </script>
+</body>
+</html>

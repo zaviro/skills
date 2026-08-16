@@ -1,0 +1,2406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilingual Translation Iteration Report</title>
+    <style>
+        :root {
+            --bg-page: #0f172a;
+            --bg-card: #1e293b;
+            --border-color: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --primary-color: #38bdf8;
+            
+            --color-good: #10b981;
+            --color-bad: #ef4444;
+            --color-warn: #f59e0b;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 32px 16px;
+        }
+        
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.025em;
+        }
+        
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+        
+        /* KPI Cards Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .kpi-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .kpi-card h3 {
+            margin: 0 0 16px 0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+        
+        .kpi-values {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+        
+        .kpi-val {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .kpi-val.baseline {
+            color: var(--text-secondary);
+            text-decoration: line-through;
+            font-size: 1.4rem;
+        }
+        
+        .kpi-val.latest {
+            color: var(--text-primary);
+        }
+        
+        .kpi-arrow {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+        }
+        
+        .kpi-delta-wrapper {
+            margin-top: 12px;
+        }
+        
+        .kpi-delta {
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            display: inline-block;
+        }
+        
+        .kpi-delta.good {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--color-good);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .kpi-delta.bad {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: var(--color-bad);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .kpi-delta.zero {
+            background-color: rgba(148, 163, 184, 0.1);
+            color: var(--text-secondary);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        
+        /* Diff Block List */
+        .block-diff-list {
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+        
+        .block-item {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .block-header {
+            background-color: rgba(51, 65, 85, 0.3);
+            padding: 14px 24px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 0.95rem;
+        }
+        
+        .block-body {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 1024px) {
+            .block-body {
+                flex-direction: row;
+            }
+        }
+        
+        .col {
+            flex: 1;
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        @media (min-width: 1024px) {
+            .col {
+                border-bottom: none;
+                border-right: 1px solid var(--border-color);
+            }
+            .col:last-child {
+                border-right: none;
+            }
+        }
+        
+        .col h4 {
+            margin: 0 0 16px 0;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            padding-bottom: 8px;
+        }
+        
+        .text-en {
+            font-family: Consolas, Monaco, "Andale Mono", monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+        
+        .text-zh {
+            font-size: 1.02rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+        
+        /* Alert Labels */
+        .alert {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        
+        .alert.error {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: var(--color-bad);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .alert.warn {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: var(--color-warn);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        
+        .warning-detail {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-left: 8px;
+            margin-bottom: 4px;
+        }
+        
+        /* Diff Highlights */
+        del {
+            background-color: rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            text-decoration: none;
+            border-bottom: 1px solid var(--color-bad);
+            padding: 1px 2px;
+            border-radius: 2px;
+        }
+        
+        ins {
+            background-color: rgba(16, 185, 129, 0.25);
+            color: #6ee7b7;
+            text-decoration: none;
+            border-bottom: 1px solid var(--color-good);
+            padding: 1px 2px;
+            border-radius: 2px;
+        }
+        
+        .space-inserted {
+            background-color: rgba(245, 158, 11, 0.4);
+            border: 1px dashed var(--color-warn);
+            display: inline-block;
+            width: 6px;
+            height: 14px;
+            vertical-align: middle;
+            margin: 0 1px;
+            border-radius: 1px;
+        }
+        
+        /* Red Escaped Span Indicators */
+        span[style*="color:red"], span[style*="color: red"] {
+            border: 1px dashed var(--color-bad);
+            padding: 1px 4px;
+            border-radius: 4px;
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Bilingual Translation Iteration Report</h1>
+            <p class="subtitle">Quantitative Evaluation and Qualitative Side-by-Side Diff Analysis</p>
+        </header>
+        
+        <!-- KPIs Row -->
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <h3>Markdown Syntax Errors</h3>
+                <div class="kpi-values">
+                    <span class="kpi-val baseline">4</span>
+                    <span class="kpi-arrow">➔</span>
+                    <span class="kpi-val latest">1</span>
+                </div>
+                <div class="kpi-delta-wrapper">
+                    <span class="kpi-delta good">-3</span>
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <h3>Missing Spacing Issues</h3>
+                <div class="kpi-values">
+                    <span class="kpi-val baseline">7</span>
+                    <span class="kpi-arrow">➔</span>
+                    <span class="kpi-val latest">0</span>
+                </div>
+                <div class="kpi-delta-wrapper">
+                    <span class="kpi-delta good">-7</span>
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <h3>Reserved Keyword Warnings</h3>
+                <div class="kpi-values">
+                    <span class="kpi-val baseline">5</span>
+                    <span class="kpi-arrow">➔</span>
+                    <span class="kpi-val latest">3</span>
+                </div>
+                <div class="kpi-delta-wrapper">
+                    <span class="kpi-delta good">-2</span>
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <h3>Uncertain Terms (Escape Red Spans)</h3>
+                <div class="kpi-values">
+                    <span class="kpi-val baseline">0</span>
+                    <span class="kpi-arrow">➔</span>
+                    <span class="kpi-val latest">0</span>
+                </div>
+                <div class="kpi-delta-wrapper">
+                    <span class="kpi-delta zero">No Change</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Detailed Blocks List -->
+        <section class="block-diff-list">
+            
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #1</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Each and every value in JavaScript has a set of behaviors you can observe from running different operations.
+That sounds abstract, but as a quick example, consider some operations we might run on a variable named `message`.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">JavaScript 中的每一个值<del>，</del>在运行不同的操作时都有一组可以观察到的行为。
+这听起来很抽象，但作为一个<del>简单</del>的例子，我们可<del>以考虑</del>在一个名为 `message` 的变量上运行的一些操作。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">JavaScript 中的每一个值在运行不同的操作时都有一组可以观察到的行为。
+这听起来很抽象，但作为一个<ins>快速</ins>的例子，<ins>考虑</ins>我们可<ins>能</ins>在一个名为 `message` 的变量上运行的一些操作。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #2</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">If we break this down, the first runnable line of code accesses a property called `toLowerCase` and then calls it.
+The second one tries to call `message` directly.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">如果我们<del>将它</del>分解，第一行可运行的代码访问了一个名为 `toLowerCase` 的属性，然后调用了它。
+第二行代码尝试直接调用 `message`。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">如果我们<ins>把这</ins>分解<ins>开来</ins>，第一行可运行的代码访问了一个名为 `toLowerCase` 的属性，然后调用了它。
+第二行代码尝试直接调用 `message`。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #3</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">But assuming we don&#x27;t know the value of `message` - and that&#x27;s pretty common - we can&#x27;t reliably say what results we&#x27;ll get from trying to run any of this code.
+The behavior of each operation depends entirely on what value we had in the first place.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;any&#x27;, but Chinese translation contains neither &#x27;any&#x27; nor &#x27;any&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">但是假设我们不知道 `message` 的值<del>（</del>这<del>很</del>常见<del>），</del>我们<del>就</del>无法可靠地预测运行这些代码会得到什么结果。
+每个操作的行为完全取决于我们最初拥有什么值。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;any&#x27;, but Chinese translation contains neither &#x27;any&#x27; nor &#x27;any&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">但是假设我们不知道 `message` 的值<ins>——</ins>这<ins>非常</ins>常见<ins>——</ins>我们无法可靠地预测运行这些代码会得到什么结果。
+每个操作的行为完全取决于我们最初拥有什么值。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #4</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">- Is `message` callable?
+- Does it have a property called `toLowerCase` on it?
+- If it does, is `toLowerCase` even callable?
+- If both of these values are callable, what do they return?</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">- `message` 是可调用的吗？
+- 它上面有一个名为 `toLowerCase` 的属性吗？
+- 如果有，`toLowerCase` 是可调用的吗？
+- 如果这两个值都是可调用的，它们返回什么？</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">- `message` 是可调用的吗？
+- 它上面有一个名为 `toLowerCase` 的属性吗？
+- 如果有，`toLowerCase` <ins>甚至</ins>是可调用的吗？
+- 如果这两个值都是可调用的，它们返回什么？</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #5</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">The answers to these questions are usually things we keep in our heads when we write JavaScript, and we have to hope we got all the details right.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">当我们编写 JavaScript 时，这些问题的答案通常<del>都</del>保存在我们的脑海中，我们<del>只能</del>寄希望于自己<del>记</del>对了<del>所有细节</del>。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">当我们编写 JavaScript 时，这些问题的答案通常<ins>是</ins>保存在我们的脑海中<ins>的</ins>，我们<ins>必须</ins>寄希望于自己<ins>把所有的细节都弄</ins>对了。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #6</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Let&#x27;s say `message` was defined in the following way.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">假设 `message` 是<del>按</del>以下方式定义的。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">假设 `message` 是以下<ins>面这种</ins>方式定义的。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #7</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">As you can probably guess, if we try to run `message.toLowerCase()`, we&#x27;ll get the same string only in lower-case.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert warn">▲ 2 Warning(s)</div><div class="warning-detail">• Technical keyword &#x27;string&#x27; might be incorrectly translated to &#x27;字符串&#x27; in Chinese text. Consider keeping it as &#x27;string&#x27;.</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;string&#x27;, but Chinese translation contains neither &#x27;string&#x27; nor &#x27;string&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">正如你可能猜到的，如果我们尝试运行 `message.toLowerCase()`，我们将得到相同的小写<del>字符串</del>。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">正如你可能猜到的，如果我们尝试运行 `message.toLowerCase()`，我们将得到相同的<ins><span class="space-inserted"> </span>string，只不过它是</ins>小写<ins>的</ins>。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #8</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">What about that second line of code?
+If you&#x27;re familiar with JavaScript, you&#x27;ll know this fails with an exception:</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">那<del>么</del>第二行代码呢？
+如果你熟悉 JavaScript，你就会知道这会失败并抛出一个异常：</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">那第二行代码呢？
+如果你熟悉 JavaScript，你就会知道这会失败并抛出一个异常：</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #9</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">It&#x27;d be great if we could avoid mistakes like this.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">如果<del>我们</del>能避免这样的错误就太好了。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">如果能避免这样的错误就太好了。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #10</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">When we run our code, the way that our JavaScript runtime chooses what to do is by figuring out the _type_ of the value - what sorts of behaviors and capabilities it has.
+That&#x27;s part of what that `TypeError` is alluding to - it&#x27;s saying that the string `&quot;Hello World!&quot;` cannot be called as a function.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert warn">▲ 2 Warning(s)</div><div class="warning-detail">• Technical keyword &#x27;string&#x27; might be incorrectly translated to &#x27;字符串&#x27; in Chinese text. Consider keeping it as &#x27;string&#x27;.</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;string&#x27;, but Chinese translation contains neither &#x27;string&#x27; nor &#x27;string&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">当我们运行代码时，JavaScript 运行时<del>选择</del>做什么的方法是通过<del>确定</del>值的<del>“类型”</del>——即它具有<del>哪些</del>行为和<del>功</del>能。<del>
+</del>这就是 `TypeError` 所暗示的<del>一</del>部分内容——它<del>表示字符串</del> `&quot;Hello World!&quot;` <del>不能</del>作为函数调用。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">当我们运行代码时，JavaScript 运行时<ins>决定</ins>做什么的方法是通过<ins>弄清楚</ins>值的<ins><span class="space-inserted"> </span>_type_</ins>——即它具有<ins>什么样的</ins>行为和能<ins>力</ins>。这就是 `TypeError` 所暗示的部分内容——它<ins>在说明<span class="space-inserted"> </span>string</ins> `&quot;Hello World!&quot;` <ins>无法</ins>作为函数<ins>被</ins>调用。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #11</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">For some values, such as the primitives `string` and `number`, we can identify their type at runtime using the `typeof` operator.
+But for other things like functions, there&#x27;s no corresponding runtime mechanism to identify their types.
+For example, consider this function:</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Technical keyword &#x27;typeof&#x27; might be incorrectly translated to &#x27;的类型&#x27; in Chinese text. Consider keeping it as &#x27;typeof&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">对于某些值，例如原始类型 `string` 和 `number`，我们可以在运行时使用 `typeof` 运算符来识别它们的类型。
+但对于其他事物（如函数），则没有相应的运行时机制来识别它们的类型。
+例如，考虑这个函数：</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Technical keyword &#x27;typeof&#x27; might be incorrectly translated to &#x27;的类型&#x27; in Chinese text. Consider keeping it as &#x27;typeof&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">对于某些值，例如原始类型 `string` 和 `number`，我们可以在运行时使用 `typeof` 运算符来识别它们的类型。
+但对于其他事物（如函数），则没有相应的运行时机制来识别它们的类型。
+例如，考虑这个函数：</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #12</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">We can _observe_ by reading the code that this function will only work if given an object with a callable `flip` property, but JavaScript doesn&#x27;t surface this information in a way that we can check while the code is running.
+The only way in pure JavaScript to tell what `fn` does with a particular value is to call it and see what happens.
+This kind of behavior makes it hard to predict what the code will do before it runs, which means it&#x27;s harder to know what your code is going to do while you&#x27;re writing it.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">我们通过阅读代码可以观察到，这个函数只有在给定一个具有可调用 `flip` 属性的对象时才能工作，但 JavaScript 并没有以一种我们可以在代码运行时进行检查的方式来<del>公开</del>这<del>些</del>信息。
+在纯 JavaScript 中，<del>判断</del> `fn` 对特定值<del>会</del>做什么的唯一方法就是调用它并观察会发生什么。
+这种行为使得在代码运行前很难预测它会做什么，这意味着在<del>你</del>编写代码时，很难知道你的代码将会<del>发生</del>什么。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    <div class="alert error">✘ 1 Error(s)</div>
+                    <div class="text-zh" style="margin-top:10px;">我们通过阅读代码可以<ins><span class="space-inserted"> </span>_</ins>观察<ins>_<span class="space-inserted"> </span></ins>到，这个函数只有在给定一个具有可调用 `flip` 属性的对象时才能工作，但 JavaScript 并没有以一种我们可以在代码运行时进行检查的方式来<ins>显露</ins>这<ins>种</ins>信息。
+在纯 JavaScript 中，<ins>了解</ins> `fn` 对特定值做什么的唯一方法就是调用它并<ins>看看会发生什么。
+This<span class="space-inserted"> </span>kind<span class="space-inserted"> </span>of<span class="space-inserted"> </span>behavior<span class="space-inserted"> </span>makes<span class="space-inserted"> </span>it<span class="space-inserted"> </span>hard<span class="space-inserted"> </span>to<span class="space-inserted"> </span>predict<span class="space-inserted"> </span>what<span class="space-inserted"> </span>the<span class="space-inserted"> </span>code<span class="space-inserted"> </span>will<span class="space-inserted"> </span>do<span class="space-inserted"> </span>before<span class="space-inserted"> </span>it<span class="space-inserted"> </span>runs,<span class="space-inserted"> </span>which<span class="space-inserted"> </span>means<span class="space-inserted"> </span>it's<span class="space-inserted"> </span>harder<span class="space-inserted"> </span>to<span class="space-inserted"> </span>know<span class="space-inserted"> </span>what<span class="space-inserted"> </span>your<span class="space-inserted"> </span>code<span class="space-inserted"> </span>is<span class="space-inserted"> </span>going<span class="space-inserted"> </span>to<span class="space-inserted"> </span>do<span class="space-inserted"> </span>while<span class="space-inserted"> </span>you're<span class="space-inserted"> </span>writing<span class="space-inserted"> </span>it.
+[zh]
+我们通过阅读代码可以<span class="space-inserted"> </span>_</ins>观察<ins>_<span class="space-inserted"> </span>到，这个函数只有在给定一个具有可调用<span class="space-inserted"> </span>`flip`<span class="space-inserted"> </span>属性的对象时才能工作，但<span class="space-inserted"> </span>JavaScript<span class="space-inserted"> </span>并没有以一种我们可以在代码运行时进行检查的方式来显露这种信息。
+在纯<span class="space-inserted"> </span>JavaScript<span class="space-inserted"> </span>中，了解<span class="space-inserted"> </span>`fn`<span class="space-inserted"> </span>对特定值做什么的唯一方法就是调用它并看看</ins>会发生什么。
+这种行为使得在代码运行<ins>之</ins>前很难预测它会做什么，这意味着在编写代码时，很难知道你的代码将会<ins>做</ins>什么。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #13</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Seen in this way, a _type_ is the concept of describing which values can be passed to `fn` and which will crash.
+JavaScript only truly provides _dynamic_ typing - running the code to see what happens.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">从这个角度来看，<del>“类型”</del>是描述哪些值可以传递给 `fn` 以及哪些值会导致崩溃的概念。
+JavaScript <del>实际上只</del>提供了<del>“</del>动态<del>”</del>类型<del>检查</del>——<del>即</del>运行代码<del>来看</del>看会发生什么。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">从这个角度来看，<ins>_type_<span class="space-inserted"> </span></ins>是描述哪些值可以传递给 `fn` 以及哪些值会导致崩溃的概念。
+JavaScript <ins>仅真正</ins>提供了<ins><span class="space-inserted"> </span>_</ins>动态<ins>_<span class="space-inserted"> </span></ins>类型——运行代码<ins>以查</ins>看会发生什么。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #14</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">The alternative is to use a _static_ type system to make predictions about what the code is expected to do _before_ it runs.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">另一种选择是使用<del>“</del>静态<del>”</del>类型系统，在代码运行<del>“</del>之前<del>”对</del>其预期行为<del>做出预测</del>。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">另一种选择是使用<ins><span class="space-inserted"> </span>_</ins>静态<ins>_<span class="space-inserted"> </span></ins>类型系统，在代码运行<ins><span class="space-inserted"> </span>_</ins>之前<ins>_<span class="space-inserted"> </span>预测</ins>其预期行为。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #15</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">## Static type-checking</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 静态类型检查</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 静态类型检查</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #16</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Think back to that `TypeError` we got earlier from trying to call a `string` as a function.
+_Most people_ don&#x27;t like to get any sorts of errors when running their code - those are considered bugs!
+And when we write new code, we try our best to avoid introducing new bugs.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;any&#x27;, but Chinese translation contains neither &#x27;any&#x27; nor &#x27;any&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">回想一下我们之前尝试将 `string` 作为函数调用时得到的 `TypeError`。
+大多数人都不<del>希望</del>在运行代码时遇到任何形式的错误——那些被认为是 bug！
+当我们编写新代码时，我们会尽最大努力避免引入新的 bug。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;any&#x27;, but Chinese translation contains neither &#x27;any&#x27; nor &#x27;any&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">回想一下我们之前尝试将 `string` 作为函数调用时得到的 `TypeError`。
+<ins>_</ins>大多数人<ins>_<span class="space-inserted"> </span></ins>都不<ins>喜欢</ins>在运行代码时遇到任何形式的错误——那些被认为是 bug！
+当我们编写新代码时，我们会尽最大努力避免引入新的 bug。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #17</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">If we add just a bit of code, save our file, re-run the code, and immediately see the error, we might be able to isolate the problem quickly; but that&#x27;s not always the case.
+We might not have tested the feature thoroughly enough, so we might never actually run into a potential error that would be thrown!
+Or if we were lucky enough to witness the error, we might have ended up doing large refactorings and adding a lot of different code that we&#x27;re forced to dig through.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;never&#x27;, but Chinese translation contains neither &#x27;never&#x27; nor &#x27;never&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">如果我们只<del>是</del>添加了<del>少许</del>代码，保存文件<del>并</del>重新运行代码，然后立即看到错误，我们<del>或</del>许能够<del>迅</del>速定位问题；但<del>情况</del>并<del>非</del>总是<del>如此</del>。
+我们可能没有<del>对该功能进行</del>足够彻底<del>的</del>测试，因此我们可能永远不会<del>真正</del>遇到<del>会</del>抛出的潜在错误！
+或者，如果我们足够幸运地目睹了该错误，我们可能已经<del>进行</del>了大<del>量的</del>重构<del>，</del>并添加了许多不同的代码，<del>以至于</del>我们不得不<del>费力地</del>去排查。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;never&#x27;, but Chinese translation contains neither &#x27;never&#x27; nor &#x27;never&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">如果我们只添加了<ins>一点点</ins>代码，保存文件<ins>，</ins>重新运行代码，然后立即看到错误，我们<ins>也</ins>许能够<ins>快</ins>速定位问题；但<ins>这</ins>并<ins>不</ins>总是<ins>发生</ins>。
+我们可能没有足够彻底<ins>地</ins>测试<ins>该功能</ins>，因此我们<ins>实际上</ins>可能永远不会遇到<ins>将被</ins>抛出的潜在错误！
+或者，如果我们足够幸运地目睹了该错误，我们可能已经<ins>完成</ins>了大<ins>型</ins>重构并添加了许多不同的代码，<ins>导致</ins>我们不得不去<ins>艰难</ins>排查。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #18</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Ideally, we could have a tool that helps us find these bugs _before_ our code runs.
+That&#x27;s what a static type-checker like TypeScript does.
+_Static type systems_ describe the shapes and behaviors of what our values will be when we run our programs.
+A type-checker like TypeScript uses that information and tells us when things might be going off the rails.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">理想情况下，我们可以有一个工具来帮助我们在代码运行之前<del>发现</del>这些 bug。
+这<del>正</del>是像 TypeScript 这样的静态类型检查器所做的工作。
+<del>“</del>静态类型系统<del>”</del>描述了我们<del>的程序</del>在运行时<del>，其中的</del>值<del>所具有</del>的形状和行为。
+像 TypeScript 这样的类型检查器会使用这些信息，并在事情可能偏离轨<del>道</del>时告诉我们。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">理想情况下，我们可以有一个工具来帮助我们在代码运行<ins><span class="space-inserted"> </span>_</ins>之前<ins>_<span class="space-inserted"> </span>找到</ins>这些 bug。
+这<ins>就</ins>是像 TypeScript 这样的静态类型检查器所做的工作。
+<ins>_</ins>静态类型系统<ins>_<span class="space-inserted"> </span></ins>描述了我们在运行<ins>程序</ins>时值的形状和行为。
+像 TypeScript 这样的类型检查器会使用这些信息，并在事情可能偏离<ins>正</ins>轨时告诉我们。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #19</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Running that last sample with TypeScript will give us an error message before we run the code in the first place.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;"><del>在</del> TypeScript <del>中</del>运行<del>最后</del>一个示例<del>会</del>在我们运行代码之前就给<del>出</del>一个错误<del>消息</del>。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;"><ins>使用</ins> TypeScript 运行<ins>上</ins>一个示例<ins>，甚至</ins>在我们运行代码之前<ins>，</ins>就<ins>会</ins>给<ins>我们</ins>一个错误<ins>提示</ins>。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #20</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">## Non-exception Failures</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 非异常<del>故障</del></div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 非异常<ins>的失败</ins></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #21</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">So far we&#x27;ve been discussing certain things like runtime errors - cases where the JavaScript runtime tells us that it thinks something is nonsensical.
+Those cases come up because [the ECMAScript specification](https://tc39.github.io/ecma262/) has explicit instructions on how the language should behave when it runs into something unexpected.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">到目前为止，我们一直在讨论运行时错误之类的情<del>况</del>——即 JavaScript 运行时告诉我们它认为某些<del>操作毫无</del>意义的<del>情况</del>。
+这些情况<del>之所以出现，</del>是因为 [ECMAScript 规范](https://tc39.github.io/ecma262/) 对于语言在遇到意外情况时<del>的行为</del>有<del>着</del>明确的<del>指令</del>。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">到目前为止，我们一直在讨论<ins>诸如</ins>运行时错误之类的<ins>事</ins>情——即 JavaScript 运行时告诉我们它认为某些<ins>东西是没有</ins>意义的。
+<ins>出现</ins>这些情况是因为 [ECMAScript 规范](https://tc39.github.io/ecma262/) 对于语言在遇到意外情况时<ins>应该如何表现</ins>有明确的<ins>说明</ins>。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #22</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">For example, the specification says that trying to call something that isn&#x27;t callable should throw an error.
+Maybe that sounds like &quot;obvious behavior&quot;, but you could imagine that accessing a property that doesn&#x27;t exist on an object should throw an error too.
+Instead, JavaScript gives us different behavior and returns the value `undefined`:</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">例如，规范指出，尝试调用不可调用的内容应该抛出错误。
+<del>也许</del>这听起来<del>像</del>是“<del>理所当然</del>的行为”，但你可以想象，访问对象上不存在的属性也应该抛出错误。
+<del>然而</del>，JavaScript 给我们提供了不同的行为，并返回了 `undefined`<del> 值</del>：</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">例如，规范<ins>中</ins>指出，尝试调用不可调用的内容应该抛出错误。
+这听起来<ins>可能</ins>是“<ins>显而易见</ins>的行为”，但你<ins>也</ins>可以想象，访问对象上不存在的属性也应该抛出错误。
+<ins>相反</ins>，JavaScript 给我们提供了不同的行为，并返回了<ins>值</ins> `undefined`：</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #23</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Ultimately, a static type system has to make the call over what code should be flagged as an error in its system, even if it&#x27;s &quot;valid&quot; JavaScript that won&#x27;t immediately throw an error.
+In TypeScript, the following code produces an error about `location` not being defined:</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">最终，静态类型系统必须决定在其系统中应该将哪些代码标记为错误，即使它是不会立即抛出错误的“有效” JavaScript<del> 代码</del>。
+在 TypeScript 中，以下代码会产生一个关于 `location` 未定义的错误：</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">最终，静态类型系统必须决定在其系统中应该将哪些代码标记为错误，即使它是不会立即抛出错误的“有效” JavaScript。
+在 TypeScript 中，以下代码会产生一个关于 `location` 未定义的错误：</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #24</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">While sometimes that implies a trade-off in what you can express, the intent is to catch legitimate bugs in our programs.
+And TypeScript catches _a lot_ of legitimate bugs.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">虽然这有时意味着在你所能表达的内容上有所权衡，但其<del>目的</del>是捕<del>捉</del>程序中真实<del>的</del> bug。
+而且 TypeScript <del>能够</del>捕获<del>许</del>多真实的 bug。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">虽然这有时意味着在你所能表达的内容上有所权衡，但其<ins>意图</ins>是捕<ins>获我们</ins>程序中<ins>的</ins>真实 bug。
+而且 TypeScript 捕获<ins>了<span class="space-inserted"> </span>_很</ins>多<ins>_<span class="space-inserted"> </span></ins>真实的 bug。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #25</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">For example: typos,</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">例如：拼写错误，</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">例如：拼写错误，</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #26</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">uncalled functions,</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">未调用的函数，</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">未调用的函数，</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #27</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">or basic logic errors.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">或者基本的逻辑错误。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">或者基本的逻辑错误。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #28</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">## Types for Tooling</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## <del>用于</del>工具<del>的类型</del></div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## <ins>类型与</ins>工具</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #29</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">TypeScript can catch bugs when we make mistakes in our code.
+That&#x27;s great, but TypeScript can _also_ prevent us from making those mistakes in the first place.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">当我们<del>编写</del>代码犯错时，TypeScript 可以捕获 bug。
+这很<del>棒</del>，但 TypeScript <del>还</del>可以<del>从</del>一开始就阻止我们犯这些错误。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">当我们<ins>在</ins>代码<ins>中</ins>犯错时，TypeScript 可以捕获 bug。
+这很<ins>好</ins>，但 TypeScript <ins>_也</ins>可以<ins>_<span class="space-inserted"> </span>在</ins>一开始就阻止我们犯这些错误。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #30</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">The type-checker has information to check things like whether we&#x27;re accessing the right properties on variables and other properties.
+Once it has that information, it can also start _suggesting_ which properties you might want to use.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">类型检查器拥有检查我们是否<del>在</del>变量<del>和</del>其他属性上<del>访问了</del>正确<del>的</del>属性<del>等信息</del>。
+一旦它拥有了这些信息，它<del>还</del>可以开始<del>提示</del>你可能想要使用哪些属性。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">类型检查器拥有<ins>所需的信息，以</ins>检查我们是否<ins>访问了</ins>变量<ins>以及</ins>其他属性上<ins>的</ins>正确属性。
+一旦它拥有了这些信息，它<ins>也</ins>可以开始<ins><span class="space-inserted"> </span>_建议_<span class="space-inserted"> </span></ins>你可能想要使用哪些属性。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #31</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">That means TypeScript can be leveraged for editing code too, and the core type-checker can provide error messages and code completion as you type in the editor.
+That&#x27;s part of what people often refer to when they talk about tooling in TypeScript.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">这意味着 TypeScript 也可以用来辅助编辑代码，核心类型检查器可以在你在编辑器中输入时提供错误消息和代码补全。
+这就是人们在谈论 TypeScript 中的工具支持时<del>通</del>常<del>指的是什么</del>的一部分。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">这意味着 TypeScript 也可以用来辅助编辑代码，核心类型检查器可以在你在编辑器中输入时提供错误消息和代码补全。
+这就是人们在谈论 TypeScript 中的工具支持时<ins>经</ins>常<ins>提到</ins>的一部分<ins>内容</ins>。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #32</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">&lt;!-- prettier-ignore --&gt;</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">&lt;!-- prettier-ignore --&gt;</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">&lt;!-- prettier-ignore --&gt;</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #33</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">TypeScript takes tooling seriously, and that goes beyond completions and errors as you type.
+An editor that supports TypeScript can deliver &quot;quick fixes&quot; to automatically fix errors, refactorings to easily re-organize code, and useful navigation features for jumping to definitions of a variable, or finding all references to a given variable.
+All of this is built on top of the type-checker and is fully cross-platform, so it&#x27;s likely that [your favorite editor has TypeScript support available](https://github.com/Microsoft/TypeScript/wiki/TypeScript-Editor-Support).</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert error">✘ 1 Error(s)</div>
+                    <div class="text-zh" style="margin-top:10px;">TypeScript 非常重视工具支持，这不仅仅<del>体现在你</del>输入时的补全和错误提示<del>上</del>。
+支持 TypeScript 的编辑器可以提供“快速修复”以自动修复错误、<del>用于</del>轻松重新组织代码<del>的“重构”</del>，以及用于跳转到变量定义或<del>寻</del>找给定变量所有引用<del>的实用“导航”功能</del>。
+所有这些都是建<del>立</del>在类型检查器之上并完全跨平台<del>的</del>，因此你最喜欢的编辑器很可能已经提供了对 TypeScript 的支持。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">TypeScript 非常重视工具支持，<ins>而且</ins>这不仅仅<ins>局限于</ins>输入时的补全和错误提示。
+支持 TypeScript 的编辑器可以提供“快速修复”以自动修复错误、<ins>重构以</ins>轻松重新组织代码，以及<ins>有用的导航功能，</ins>用于跳转到变量<ins>的</ins>定义或<ins>查</ins>找<ins>对</ins>给定变量<ins>的</ins>所有引用。
+所有这些都是<ins>构</ins>建在类型检查器之上<ins>的，</ins>并<ins>且</ins>完全跨平台，因此<ins><span class="space-inserted"> </span>[</ins>你最喜欢的编辑器很可能已经提供了对 TypeScript 的支持<ins>](https://github.com/Microsoft/TypeScript/wiki/TypeScript-Editor-Support)</ins>。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #34</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">## `tsc`, the TypeScript compiler</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## `tsc`，TypeScript 编译器</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## `tsc`，TypeScript 编译器</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #35</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">We&#x27;ve been talking about type-checking, but we haven&#x27;t yet used our type-_checker_.
+Let&#x27;s get acquainted with our new friend `tsc`, the TypeScript compiler.
+First we&#x27;ll need to grab it via npm.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">我们一直在<del>讨</del>论类型检查，但我们还没有使用我们的类型检查器。
+让我们<del>认</del>识<del>一下</del>我们的新朋友 `tsc`，即 TypeScript 编译器。
+首先我们需要通过 npm 获取它。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">我们一直在<ins>谈</ins>论类型检查，但我们还没有使用我们的类型<ins><span class="space-inserted"> </span>_</ins>检查器<ins>_</ins>。
+让我们<ins>来结</ins>识我们的新朋友 `tsc`，即 TypeScript 编译器。
+首先<ins>，</ins>我们需要通过 npm 获取它。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #36</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">&gt; This installs the TypeScript Compiler `tsc` globally.
+&gt; You can use `npx` or similar tools if you&#x27;d prefer to run `tsc` from a local `node_modules` package instead.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">&gt; 这将全局安装 TypeScript 编译器 `tsc`。
+&gt; 如果你更愿意从本地的 `node_modules` 包中运行 `tsc`，你可以使用 `npx` 或类似的工具。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">&gt; 这将全局安装 TypeScript 编译器 `tsc`。
+&gt; 如果你更愿意从本地的 `node_modules` 包中运行 `tsc`，你可以使用 `npx` 或类似的工具。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #37</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Now let&#x27;s move to an empty folder and try writing our first TypeScript program: `hello.ts`:</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">现在让我们<del>移步到</del>一个空文件夹，并尝试编写我们的第一个 TypeScript 程序：`hello.ts`：</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">现在<ins>，</ins>让我们<ins>进入</ins>一个空文件夹，并尝试编写我们的第一个 TypeScript 程序：`hello.ts`：</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #38</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Notice there are no frills here; this &quot;hello world&quot; program looks identical to what you&#x27;d write for a &quot;hello world&quot; program in JavaScript.
+And now let&#x27;s type-check it by running the command `tsc` which was installed for us by the `typescript` package.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">注意这里没有任何<del>多余</del>的<del>修饰</del>；这个“hello world”程序看起来与你在 JavaScript 中编写的“hello world”程序完全相同。
+现在<del>，</del>让我们通过运行由 `typescript` 包为我们安装的 `tsc` 命令来进行类型检查。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">注意这里没有任何<ins>花哨</ins>的<ins>地方</ins>；这个“hello world”程序看起来与你在 JavaScript 中编写的“hello world”程序完全相同。
+现在让我们通过运行由 `typescript` 包为我们安装的 `tsc` 命令来进行类型检查。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #39</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Tada!</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">哒哒！</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">哒哒！</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #40</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Wait, &quot;tada&quot; _what_ exactly?
+We ran `tsc` and nothing happened!
+Well, there were no type errors, so we didn&#x27;t get any output in our console since there was nothing to report.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;any&#x27;, but Chinese translation contains neither &#x27;any&#x27; nor &#x27;any&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">等等，到底“哒哒”了什么？
+我们运行了 `tsc`，但什么<del>都</del>没发生！
+<del>其实是</del>因为没有<del>任何</del>类型错误，所以我们的控制台中没有任何输出，因为没有什么需要报告的。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;any&#x27;, but Chinese translation contains neither &#x27;any&#x27; nor &#x27;any&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">等等，到底“哒哒”了<ins><span class="space-inserted"> </span>_</ins>什么<ins>_</ins>？
+我们运行了 `tsc`，但什么<ins>也</ins>没发生！
+<ins>好吧，</ins>因为没有类型错误，所以我们的控制台中没有任何输出，因为没有什么需要报告的。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #41</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">But check again - we got some _file_ output instead.
+If we look in our current directory, we&#x27;ll see a `hello.js` file next to `hello.ts`.
+That&#x27;s the output from our `hello.ts` file after `tsc` _compiles_ or _transforms_ it into a plain JavaScript file.
+And if we check the contents, we&#x27;ll see what TypeScript spits out after it processes a `.ts` file:</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">但再检查一下<del> </del>——<del> </del>我们<del>反而</del>得到了文件输出。
+如果我们查看当前目录，我们会看到 `hello.ts` 旁边<del>有</del>一个 `hello.js` 文件。
+这就是我们的 `hello.ts` 文件<del>在被</del> <del>`tsc` </del>编译<del>（compile）</del>或转换<del>（transform）</del>为纯 JavaScript 文件后的输出。
+如果我们<del>检</del>查其内容，我们<del>会</del>看到 TypeScript 在处理<del>完一个</del> `.ts` 文件后<del>所</del>输出的内容：</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">但再检查一下——我们<ins>实际上</ins>得到了<ins>一个<span class="space-inserted"> </span>_</ins>文件<ins>_<span class="space-inserted"> </span></ins>输出。
+如果我们查看当前目录，我们会看到 `hello.ts` 旁边<ins>多了</ins>一个 `hello.js` 文件。
+这就是<ins><span class="space-inserted"> </span>`tsc`<span class="space-inserted"> </span>将</ins>我们的 `hello.ts` 文件 <ins>_</ins>编译<ins>_<span class="space-inserted"> </span></ins>或<ins><span class="space-inserted"> </span>_</ins>转换<ins>_<span class="space-inserted"> </span></ins>为纯 JavaScript 文件后的输出。
+如果我们查<ins>看</ins>其<ins>中的</ins>内容，我们<ins>将</ins>看到 TypeScript 在处理 `.ts` 文件后输出的内容：</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #42</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">In this case, there was very little for TypeScript to transform, so it looks identical to what we wrote.
+The compiler tries to emit clean readable code that looks like something a person would write.
+While that&#x27;s not always so easy, TypeScript indents consistently, is mindful of when our code spans across different lines of code, and tries to keep comments around.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">在这种情况下，TypeScript <del>几乎不</del>需要<del>进行任何</del>转换，<del>因此</del>它看起来<del>与</del>我们编写的<del>内容</del>完全相同。
+编译器<del>会尝</del>试生成干净<del>、</del>可读的代码，<del>使其看起来</del>像<del>是由</del>人<del>编</del>写的一样。
+虽然这并不总是那么容易，但 TypeScript <del>会保持</del>一致的<del>缩进</del>，注意代码何时跨越不同的行，并努力保留注释。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">在这种情况下，TypeScript 需要转换<ins>的内容非常少</ins>，<ins>所以</ins>它看起来<ins>和</ins>我们编写的<ins>代码</ins>完全相同。
+编译器试<ins>图</ins>生成干净<ins>且</ins>可读的代码，<ins>就</ins>像人写的一样。
+虽然这并不总是那么容易，但 TypeScript <ins>的缩进是</ins>一致的，<ins>并且会</ins>注意<ins>到我们的</ins>代码何时跨越不同的<ins>代码</ins>行，并努力保留<ins>其中的</ins>注释。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #43</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">What about if we _did_ introduce a type-checking error?
+Let&#x27;s rewrite `hello.ts`:</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">如果我们确实引入了类型检查错误会怎么样？
+让我们重写 `hello.ts`：</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">如果我们<ins><span class="space-inserted"> </span>_</ins>确实<ins>_<span class="space-inserted"> </span></ins>引入了<ins>一个</ins>类型检查错误会怎么样？
+让我们重写 `hello.ts`：</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #44</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">If we run `tsc hello.ts` again, notice that we get an error on the command line!</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">如果我们再次运行 `tsc hello.ts`，<del>请</del>注意我们会在命令行中得到一个错误！</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">如果我们再次运行 `tsc hello.ts`，注意我们会在命令行中得到一个错误！</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #45</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">TypeScript is telling us we forgot to pass an argument to the `greet` function, and rightfully so.
+So far we&#x27;ve only written standard JavaScript, and yet type-checking was still able to find problems with our code.
+Thanks TypeScript!</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">TypeScript 告诉我们，我们忘记给 `greet` 函数传递参数了，<del>事实也确实</del>如此。
+到目前为止，我们只编写了标准的 JavaScript，但类型检查仍然能够发现我们代码中的问题。
+谢谢 TypeScript！</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">TypeScript <ins>正在</ins>告诉我们，我们忘记给 `greet` 函数传递参数了，<ins>理应</ins>如此。
+到目前为止，我们只编写了标准的 JavaScript，但类型检查仍然能够发现我们代码中的问题。
+谢谢 TypeScript！</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #46</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">## Emitting with Errors</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 伴随错误输出</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 伴随错误<ins>的</ins>输出</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #47</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">One thing you might not have noticed from the last example was that our `hello.js` file changed again.
+If we open that file up then we&#x27;ll see that the contents still basically look the same as our input file.
+That might be a bit surprising given the fact that `tsc` reported an error about our code, but this is based on one of TypeScript&#x27;s core values: much of the time, _you_ will know better than TypeScript.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;"><del>您</del>可能没有注意到<del>上</del>一<del>个示例中</del>，我们的 `hello.js` 文件再次<del>发生</del>了<del>变化</del>。
+如果我们打开<del>该</del>文件，我们会<del>发现其</del>内容基本上仍然<del>与</del>我们的输入文件<del>相同</del>。
+考虑到 `tsc` 报告了关于我们代码<del>的</del>错误，这可能有点令人惊讶，但这<del>正是</del>基于 TypeScript 的核心价值观之一：在很多时候，<del>您</del>比 TypeScript 更<del>了解您的代码</del>。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;"><ins>上一个例子中你</ins>可能没有注意到<ins>的</ins>一<ins>点是</ins>，我们的 `hello.js` 文件再次<ins>改变</ins>了。
+如果我们打开<ins>那个</ins>文件，我们会<ins>看到</ins>内容基本上<ins>看起来</ins>仍然<ins>和</ins>我们的输入文件<ins>一样</ins>。
+考虑到 `tsc` 报告了关于我们代码<ins>电</ins>错误，这可能<ins>会</ins>有点令人惊讶，但这基于 TypeScript 的核心价值观之一：在很多时候，<ins>_你_<span class="space-inserted"> </span></ins>比 TypeScript 更<ins>清楚自己在做什么</ins>。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #48</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">To reiterate from earlier, type-checking code limits the sorts of programs you can run, and so there&#x27;s a tradeoff on what sorts of things a type-checker finds acceptable.
+Most of the time that&#x27;s okay, but there are scenarios where those checks get in the way.
+For example, imagine yourself migrating JavaScript code over to TypeScript and introducing type-checking errors.
+Eventually you&#x27;ll get around to cleaning things up for the type-checker, but that original JavaScript code was already working!
+Why should converting it over to TypeScript stop you from running it?</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">重申一下之前的内容，<del>对</del>代码<del>进行类型检查会</del>限制<del>您</del>可以运行的程序<del>类型</del>，因此在类型检查器认为可<del>以</del>接受的事<del>物</del>上存在<del>着</del>权衡。
+大多数<del>情况下</del>这没问题，但在某些场景下，这些检查会成为阻碍。
+例如，想象一下<del>您正在</del>将 JavaScript 代码迁移到 TypeScript 并引入了类型检查错误。
+<del>虽然您</del>最终会<del>花</del>时间为类型检查器清理这些错误，但原<del>本</del>的 JavaScript 代码本<del>身是已经</del>可以正常运行<del>的</del>！
+为什么<del>仅仅因为</del>将它转换<del>为</del> TypeScript <del>就要</del>阻止<del>您</del>运行它呢？</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">重申一下之前的内容，<ins>类型检查</ins>代码限制<ins>了你</ins>可以运行的程序<ins>种类</ins>，因此在类型检查器认为可接受的事<ins>情</ins>上存在权衡。
+大多数<ins>时候</ins>这没问题，但在某些场景下，这些检查会成为阻碍。
+例如，想象一下<ins>你自己</ins>将 JavaScript 代码迁移到 TypeScript 并引入了类型检查错误。
+最终<ins>你</ins>会<ins>抽出</ins>时间<ins>来</ins>为类型检查器清理这些错误，但原<ins>来</ins>的 JavaScript 代码本<ins>就</ins>可以正常运行！
+为什么将它转换<ins>到</ins> TypeScript <ins>会</ins>阻止<ins>你</ins>运行它呢？</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #49</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">So TypeScript doesn&#x27;t get in your way.
+Of course, over time, you may want to be a bit more defensive against mistakes, and make TypeScript act a bit more strictly.
+In that case, you can use the [`noEmitOnError`](/tsconfig#noEmitOnError) compiler option.
+Try changing your `hello.ts` file and running `tsc` with that flag:</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;"><del>所以 </del>TypeScript 不会<del>成为您的</del>阻碍。
+当然，随着时间的推移，<del>您</del>可能希望对错误<del>采取</del>更具防<del>御</del>性<del>的策略</del>，并让 TypeScript 表现得更严格一些。
+在这种情况下，<del>您</del>可以使用 [`noEmitOnError`](/tsconfig#noEmitOnError) 编译器选项。
+尝试修改<del>您</del>的 `hello.ts` 文件并带<del>上</del>该标志<del>运行</del> `tsc`：</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;"><ins>因此，</ins>TypeScript 不会阻碍<ins>你</ins>。
+当然，随着时间的推移，<ins>你</ins>可能希望对错误更具防<ins>备</ins>性，并让 TypeScript 表现得更严格一些。
+在这种情况下，<ins>你</ins>可以使用 [`noEmitOnError`](/tsconfig#noEmitOnError) 编译器选项。
+尝试修改<ins>你</ins>的 `hello.ts` 文件并<ins>运行</ins>带<ins>有</ins>该标志<ins>的</ins> `tsc`：</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #50</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">You&#x27;ll notice that `hello.js` never gets updated.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;never&#x27;, but Chinese translation contains neither &#x27;never&#x27; nor &#x27;never&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;"><del>您</del>会注意到 `hello.js` 永远不会被更新。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;never&#x27;, but Chinese translation contains neither &#x27;never&#x27; nor &#x27;never&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;"><ins>你</ins>会注意到 `hello.js` 永远不会被更新。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #51</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">## Explicit Types</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 显式类型</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 显式类型</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #52</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Up until now, we haven&#x27;t told TypeScript what `person` or `date` are.
+Let&#x27;s edit the code to tell TypeScript that `person` is a `string`, and that `date` should be a `Date` object.
+We&#x27;ll also use the `toDateString()` method on `date`.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">到<del>目前为止</del>，我们还没有告诉 TypeScript <del>关于 </del>`person` 或 `date` <del>的类型</del>。
+让我们<del>修改</del>代码<del>，</del>告诉 TypeScript<del>，</del>`person` 是一个 `string`，并且 `date` 应该是一个 `Date` 对象。
+我们还会对 `date` <del>调</del>用 `toDateString()` 方法。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;"><ins>直</ins>到<ins>现在</ins>，我们还没有告诉 TypeScript `person` 或 `date` <ins>是什么</ins>。
+让我们<ins>编辑</ins>代码<ins>来</ins>告诉 TypeScript<ins><span class="space-inserted"> </span></ins>`person` 是一个 `string`，并且 `date` 应该是一个 `Date` 对象。
+我们还会对 `date` <ins>使</ins>用 `toDateString()` 方法。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #53</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">What we did was add _type annotations_ on `person` and `date` to describe what types of values `greet` can be called with.
+You can read that signature as &quot;`greet` takes a `person` of type `string`, and a `date` of type `Date`&quot;.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">我们所做的是在 `person` 和 `date` 上添加类型注解<del>（type annotations）</del>，以描述调用 `greet`<del> 时可以传入什么类型的的值</del>。
+<del>您</del>可以将该签名解读为“`greet` 接<del>受</del>一个 `string` 类型的 `person`，以及一个 `Date` 类型的 `date`”。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">我们所做的是在 `person` 和 `date` 上添加<ins><span class="space-inserted"> </span>_</ins>类型注解<ins>_</ins>，以描述<ins>可以使用什么类型的参数来</ins>调用 `greet`。
+<ins>你</ins>可以将该签名解读为“`greet` 接<ins>收</ins>一个 `string` 类型的 `person`，以及一个 `Date` 类型的 `date`”。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #54</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">With this, TypeScript can tell us about other cases where `greet` might have been called incorrectly.
+For example...</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">有了这个，TypeScript 就能告诉我们其他可能错误调用 `greet` 的情况。
+例如<del>……</del></div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">有了这个，TypeScript 就能告诉我们其他可能错误调用 `greet` 的情况。
+例如<ins>...</ins></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #55</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Huh?
+TypeScript reported an error on our second argument, but why?</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;"><del>咦</del>？
+TypeScript 在我们的第二个参数上报告了错误，但这是为什么？</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;"><ins>嗯</ins>？
+TypeScript 在我们的第二个参数上报告了<ins>一个</ins>错误，但这是为什么？</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #56</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Perhaps surprisingly, calling `Date()` in JavaScript returns a `string`.
+On the other hand, constructing a `Date` with `new Date()` actually gives us what we were expecting.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">也许令人惊讶的是，在 JavaScript 中调用 `Date()` 会返回一个 `string`。
+另一方面，<del>通过</del> `new Date()` <del>来</del>构造一个 `Date` <del>确</del>实会给我们<del>带来预</del>期的结果。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">也许令人惊讶的是，在 JavaScript 中调用 `Date()` 会返回一个 `string`。
+另一方面，<ins>使用</ins> `new Date()` 构造一个 `Date` 实<ins>际上</ins>会给我们<ins>我们所</ins>期<ins>望</ins>的结果。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #57</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Anyway, we can quickly fix up the error:</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">无论如何，我们可以快速修复这个错误：</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">无论如何，我们可以快速修复这个错误：</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #58</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Keep in mind, we don&#x27;t always have to write explicit type annotations.
+In many cases, TypeScript can even just _infer_ (or &quot;figure out&quot;) the types for us even if we omit them.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;"><del>请</del>记住，我们并不总是需要写显式类型注解。
+在许多情况下，即使我们省略了<del>类型注解</del>，TypeScript 甚至也<del>能</del>为我们推断（<del>infer，即</del>“弄清楚”）类型。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">记住，我们并不总是需要<ins>编</ins>写显式类型注解。
+在许多情况下，即使我们省略了<ins>它们</ins>，TypeScript 甚至也<ins>可以直接</ins>为我们<ins><span class="space-inserted"> </span>_</ins>推断<ins>_</ins>（<ins>或</ins>“弄清楚”）类型。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #59</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Even though we didn&#x27;t tell TypeScript that `msg` had the type `string` it was able to figure that out.
+That&#x27;s a feature, and it&#x27;s best not to add annotations when the type system would end up inferring the same type anyway.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">即使我们没有告诉 TypeScript<del> 变量</del> `msg` 的类型是 `string`，它也能够弄清楚。
+这<del>本身就</del>是一<del>项</del>特性，当类型系统最终能推断出相同的类型时，最好不要添加<del>类型</del>注解。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">即使我们没有告诉 TypeScript `msg` 的类型是 `string`，它也能够弄清楚<ins>这一点</ins>。
+这是一<ins>个</ins>特性，当类型系统最终能<ins>够</ins>推断出相同的类型时，最好不要添加注解。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #60</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">&gt; Note: The message bubble inside the previous code sample is what your editor would show if you had hovered over the word.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">&gt; 注意：前一个代码示例中的消息气泡是<del>您</del>的<del>编辑器在您将</del>鼠标悬停在该单词上时所显示的内容。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">&gt; 注意：前一个代码示例中的消息气泡是<ins>当你</ins>的鼠标悬停在该单词上时<ins>编辑器</ins>所显示的内容。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #61</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">## Erased Types</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 擦除的类型</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 擦除的类型</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #62</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Let&#x27;s take a look at what happens when we compile the above function `greet` with `tsc` to output JavaScript:</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">让我们来看看<del>，</del>当我们<del>使用 `tsc` 编译</del>上述 `greet` 函数以输出 JavaScript 时会发生什么：</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">让我们来看看当我们<ins>将</ins>上述<ins>的</ins> `greet` 函数<ins>用<span class="space-inserted"> </span>`tsc`<span class="space-inserted"> </span>编译</ins>以输出 JavaScript 时会发生什么：</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #63</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Notice two things here:</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;"><del>请</del>注意这里的两件事：</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">注意这里的两件事：</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #64</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">1. Our `person` and `date` parameters no longer have type annotations.
+2. Our &quot;template string&quot; - that string that used backticks (the `` ` `` character) - was converted to plain strings with concatenations.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert warn">▲ 2 Warning(s)</div><div class="warning-detail">• Technical keyword &#x27;string&#x27; might be incorrectly translated to &#x27;字符串&#x27; in Chinese text. Consider keeping it as &#x27;string&#x27;.</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;string&#x27;, but Chinese translation contains neither &#x27;string&#x27; nor &#x27;string&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">1. 我们的 `person` 和 `date` 参数不再有类型注解。
+2. 我们的“模板字符串”<del> </del>——<del> 那个</del>使用反引号（ `` ` `` 字符）的字符串<del> </del>——<del> </del>被转换<del>为</del>了带有拼接的普通字符串。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    <div class="alert warn">▲ 2 Warning(s)</div><div class="warning-detail">• Technical keyword &#x27;string&#x27; might be incorrectly translated to &#x27;字符串&#x27; in Chinese text. Consider keeping it as &#x27;string&#x27;.</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;string&#x27;, but Chinese translation contains neither &#x27;string&#x27; nor &#x27;string&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">1. 我们的 `person` 和 `date` 参数不再有类型注解。
+2. 我们的“模板字符串”——<ins>即</ins>使用反引号（ `` ` `` 字符）的字符串——被转换<ins>成</ins>了带有拼接的普通字符串。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #65</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">More on that second point later, but let&#x27;s now focus on that first point.
+Type annotations aren&#x27;t part of JavaScript (or ECMAScript to be pedantic), so there really aren&#x27;t any browsers or other runtimes that can just run TypeScript unmodified.
+That&#x27;s why TypeScript needs a compiler in the first place - it needs some way to strip out or transform any TypeScript-specific code so that you can run it.
+Most TypeScript-specific code gets erased away, and likewise, here our type annotations were completely erased.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;any&#x27;, but Chinese translation contains neither &#x27;any&#x27; nor &#x27;any&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;"><del>关于 second 点我们</del>稍后会详细介绍<del>，</del>现在让我们专注于第一点。
+类型注解并不是 JavaScript（<del>准确地</del>说是 ECMAScript<del>）</del>的一部分<del>，所以</del>实际上没有任何浏览器或其他运行<del>环境能够</del>直接运行未修改的 TypeScript。
+这就是为什么 TypeScript 首先需要一个编译器<del> </del>——<del> </del>它需要某种方<del>式</del>来剥离或转换任何 TypeScript 特<del>有</del>的代码，以便<del>您</del>可以运行它。
+大多数 TypeScript 特<del>有</del>的代码都会被擦除，同样地，我们<del>这里</del>的类型注解也被完全擦除了。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;any&#x27;, but Chinese translation contains neither &#x27;any&#x27; nor &#x27;any&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">稍后会详细介绍<ins>第二点，但</ins>现在让我们<ins>先</ins>专注于第一点。
+类型注解并不是 JavaScript<ins><span class="space-inserted"> </span>的一部分</ins>（<ins>或者严格点</ins>说是 ECMAScript<ins><span class="space-inserted"> </span></ins>的一部分<ins>），因此</ins>实际上没有任何浏览器或其他运行<ins>时可以</ins>直接运行未<ins>经</ins>修改的 TypeScript。
+这就是为什么 TypeScript 首先需要一个编译器——它需要某种方<ins>法</ins>来剥离或转换任何 TypeScript 特<ins>定</ins>的代码，以便<ins>你</ins>可以运行它。
+大多数 TypeScript 特<ins>定</ins>的代码都会被擦除，同样地，<ins>这里</ins>我们的类型注解也被完全擦除了。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #66</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">&gt; **Remember**: Type annotations never change the runtime behavior of your program.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert error">✘ 1 Error(s)</div>
+                    <div class="text-zh" style="margin-top:10px;">&gt; **记住**：类型注解永远不会改变程序的运行时行为。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;never&#x27;, but Chinese translation contains neither &#x27;never&#x27; nor &#x27;never&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">&gt; **<ins><span class="space-inserted"> </span></ins>记住<ins><span class="space-inserted"> </span></ins>**：类型注解永远不会改变<ins>你</ins>程序的运行时行为。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #67</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">## Downleveling</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 降级<del>（Downleveling）</del></div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 降级</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #68</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">One other difference from the above was that our template string was rewritten from</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert warn">▲ 2 Warning(s)</div><div class="warning-detail">• Technical keyword &#x27;string&#x27; might be incorrectly translated to &#x27;字符串&#x27; in Chinese text. Consider keeping it as &#x27;string&#x27;.</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;string&#x27;, but Chinese translation contains neither &#x27;string&#x27; nor &#x27;string&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">与上述内容<del>的</del>另一个不同之处在于<del>，</del>我们的模板字符串从<del>：</del></div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    <div class="alert warn">▲ 2 Warning(s)</div><div class="warning-detail">• Technical keyword &#x27;string&#x27; might be incorrectly translated to &#x27;字符串&#x27; in Chinese text. Consider keeping it as &#x27;string&#x27;.</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;string&#x27;, but Chinese translation contains neither &#x27;string&#x27; nor &#x27;string&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">与上述内容<ins>相比，</ins>另一个不同之处在于我们的模板字符串<ins>被重写了，</ins>从</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #69</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">to</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;"><del>被重写</del>为<del>：</del></div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">为</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #70</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Why did this happen?</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">为什么会这<del>样</del>？</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">为什么会<ins>发生</ins>这<ins>种情况</ins>？</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #71</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Template strings are a feature from a version of ECMAScript called ECMAScript 2015 (a.k.a. ECMAScript 6, ES2015, ES6, etc. - _don&#x27;t ask_).
+TypeScript has the ability to rewrite code from newer versions of ECMAScript to older ones such as ECMAScript 3 or ECMAScript 5 (a.k.a. ES5).
+This process of moving from a newer or &quot;higher&quot; version of ECMAScript down to an older or &quot;lower&quot; one is sometimes called _downleveling_.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert error">✘ 1 Error(s)</div>
+                    <div class="text-zh" style="margin-top:10px;">模板字符串是来自名为 ECMAScript 2015 的 ECMAScript 版本的<del>一项</del>特性（又名 ECMAScript 6、ES2015、ES6 等<del> </del>——<del> *</del>别问<del>为什么*</del>）。
+TypeScript 能<del>够</del>将<del>较</del>新版本<del>的 ECMAScript </del>代码重写为<del>较</del>旧版本<del>的代码</del>，例如 ECMAScript 3 或 ECMAScript 5（又名 ES5）。
+这种从<del>较</del>新或“<del>较</del>高”版本的 ECMAScript 移动到<del>较</del>旧或“<del>较</del>低”版本的过程有时被称为 <del>*</del>降级<del>（downleveling）*</del>。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">模板字符串是来自<ins>一个</ins>名为 ECMAScript 2015 的 ECMAScript 版本的特性（又名 ECMAScript 6、ES2015、ES6 等——<ins>_</ins>别问<ins>_</ins>）。
+TypeScript <ins>有</ins>能<ins>力</ins>将新版本<ins><span class="space-inserted"> </span>ECMAScript<span class="space-inserted"> </span>的</ins>代码重写为旧版本，例如 ECMAScript 3 或 ECMAScript 5（又名 ES5）。
+这种从新<ins>版本</ins>或“高<ins>级</ins>”版本的 ECMAScript 移动到旧<ins>版本</ins>或“低<ins>级</ins>”版本的过程有时被称为 <ins>_</ins>降级<ins>_</ins>。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #72</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">By default TypeScript targets ES5, an extremely old version of ECMAScript.
+We could have chosen something a little bit more recent by using the [`target`](/tsconfig#target) option.
+Running with `--target es2015` changes TypeScript to target ECMAScript 2015, meaning code should be able to run wherever ECMAScript 2015 is supported.
+So running `tsc --target es2015 hello.ts` gives us the following output:</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">默认情况下，TypeScript 的目标<del>版本</del>是 ES5，这是一个非常古老的 ECMAScript 版本。
+我们可以通过使用 [`target`](/tsconfig#target) 选项来选择<del>更</del>新的版本。
+<del>带上 `--target es2015` </del>运行会改变 TypeScript 的目标<del>版本</del>为 ECMAScript 2015，这意味着代码应该能够在任何支持 ECMAScript 2015 的地方运行。
+<del>因此，</del>运行 `tsc --target es2015 hello.ts` 会给我们以下输出：</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">默认情况下，TypeScript 的目标是 ES5，这是一个非常古老的 ECMAScript 版本。
+我们可以通过使用 [`target`](/tsconfig#target) 选项来选择<ins>一些稍微</ins>新<ins>一点</ins>的版本。
+运行<ins>带<span class="space-inserted"> </span>`--target<span class="space-inserted"> </span>es2015`<span class="space-inserted"> </span>参数</ins>会改变 TypeScript 的目标为 ECMAScript 2015，这意味着代码应该能够在任何支持 ECMAScript 2015 的地方运行。
+<ins>所以</ins>运行 `tsc --target es2015 hello.ts` 会给我们以下输出：</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #73</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">&gt; While the default target is ES5, the great majority of current browsers support ES2015.
+&gt; Most developers can therefore safely specify ES2015 or above as a target, unless compatibility with certain ancient browsers is important.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">&gt; 虽然默认<del>的</del>目标<del>版本</del>是 ES5，但目前绝大多数浏览器都支持 ES2015。
+&gt; 因此，除非与某些古老浏览器的兼容性<del>至关</del>重要，否则大多数开发人员<del>都</del>可以安全地将<del>目标版本指定为</del> ES2015 或更高版本。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">&gt; 虽然默认目标是 ES5，但目前绝大多数浏览器都支持 ES2015。
+&gt; 因此，除非与某些古老浏览器的兼容性<ins>非常</ins>重要，否则大多数开发人员可以安全地将 ES2015 或更高版本<ins>指定为目标</ins>。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #74</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">## Strictness</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 严格度</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## 严格度</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #75</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Different users come to TypeScript looking for different things in a type-checker.
+Some people are looking for a more loose opt-in experience which can help validate only some parts of their program, and still have decent tooling.
+This is the default experience with TypeScript, where types are optional, inference takes the most lenient types, and there&#x27;s no checking for potentially `null`/`undefined` values.
+Much like how `tsc` emits in the face of errors, these defaults are put in place to stay out of your way.
+If you&#x27;re migrating existing JavaScript, that might be a desirable first step.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">不同的用户来到 TypeScript，<del>在</del>类型检查器中<del>寻找</del>不同的<del>东西</del>。
+有些人正在寻找更宽松的<del>、可</del>选<del>的</del>体验，这可以帮助他们<del>只验证</del>程序的某些部分，同时仍然拥有不错的工具支持。
+这是 TypeScript 的默认体验，其中类型是可选的，推断会<del>使</del>用最宽松的类型，并且不检查<del>潜在的</del> `null`<del> </del>/<del> </del>`undefined` 值。
+就像 `tsc` 在面对错误时<del>仍</del>然会输出<del>文件</del>一样，<del>设置</del>这些默认<del>值</del>是为了不<del>成为您的</del>阻碍。
+如果<del>您</del>正在迁移现有的 JavaScript<del> 代码</del>，这可能是一个理想的第一步。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">不同的用户来到 TypeScript，<ins>希望从</ins>类型检查器中<ins>获得</ins>不同的<ins>体验</ins>。
+有些人正在寻找<ins>一种</ins>更宽松的选<ins>择性（opt-in）</ins>体验，这可以<ins>只</ins>帮助<ins>验证</ins>他们程序的某些部分，同时仍然拥有不错的工具支持。
+这是 TypeScript 的默认体验，其中类型是可选的，推断会<ins>采</ins>用最宽松的类型，并且不<ins>会</ins>检查<ins>可能为</ins> `null`/`undefined` <ins>的</ins>值。
+就像 `tsc` 在面对错误时<ins>依</ins>然会输出<ins>代码</ins>一样，这些默认<ins>设置</ins>是为了不阻碍<ins>你</ins>。
+如果<ins>你</ins>正在迁移现有的 JavaScript，这可能是一个理想的第一步。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #76</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">In contrast, a lot of users prefer to have TypeScript validate as much as it can straight away, and that&#x27;s why the language provides strictness settings as well.
+These strictness settings turn static type-checking from a switch (either your code is checked or not) into something closer to a dial.
+The further you turn this dial up, the more TypeScript will check for you.
+This can require a little extra work, but generally speaking it pays for itself in the long run, and enables more thorough checks and more accurate tooling.
+When possible, a new codebase should always turn these strictness checks on.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">相比之下，<del>许</del>多用户更喜欢让 TypeScript 立即尽可能多地进行验证，这<del>就</del>是为什么该语言也提供了严格度设置。
+这些严格度设置将静态类型检查从开关（要么检查<del>您</del>的代码，要么不检查）变成更类似于刻度盘的东西。
+<del>您将</del>这个刻度盘拨得越<del>满</del>，TypeScript 为<del>您检查的内容</del>就越多。
+这可能需要一些额外的工作，但<del>通常</del>来说，从长远来看它是<del>非常</del>值得的，并且<del>能够</del>实现更彻底的检查和更精确的工具支持。
+在可能的情况下，新的代码库应该始终开启这些严格度检查。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">相比之下，<ins>很</ins>多用户更喜欢让 TypeScript 立即尽可能多地进行验证，这<ins>也</ins>是为什么该语言也提供了严格度设置。
+这些严格度设置将静态类型检查从<ins>一个</ins>开关（要么检查<ins>你</ins>的代码，要么不检查）变成<ins>了</ins>更类似于刻度盘的东西。
+<ins>你把</ins>这个刻度盘拨得越<ins>高</ins>，TypeScript 为<ins>你检查的</ins>就越多。
+这可能需要一些额外的工作，但<ins>总的</ins>来说，从长远来看它是值得的，并且<ins>可以</ins>实现更彻底的检查和更精确的工具支持。
+在可能的情况下，新的代码库应该始终开启这些严格度检查。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #77</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">TypeScript has several type-checking strictness flags that can be turned on or off, and all of our examples will be written with all of them enabled unless otherwise stated.
+The [`strict`](/tsconfig#strict) flag in the CLI, or `&quot;strict&quot;: true` in a [`tsconfig.json`](https://www.typescriptlang.org/docs/handbook/tsconfig-json.html) toggles them all on simultaneously, but we can opt out of them individually.
+The two biggest ones you should know about are [`noImplicitAny`](/tsconfig#noImplicitAny) and [`strictNullChecks`](/tsconfig#strictNullChecks).</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">TypeScript 有几个可以开启或关闭的类型检查严格度标志，除非另有说明，<del>否则</del>我们所有的示例都将在开启所有<del>这些</del>标志的情况下编写。
+<del>命令行</del>中的 [`strict`](/tsconfig#strict) 标志，或 [`tsconfig.json`](https://www.typescriptlang.org/docs/handbook/tsconfig-json.html) 中的 `&quot;strict&quot;: true`<del>，可以</del>同时开启所有这些标志，但我们<del>也</del>可以单独关闭它们。
+<del>您应该</del>了解的两个最<del>大</del>的标志是 [`noImplicitAny`](/tsconfig#noImplicitAny) 和 [`strictNullChecks`](/tsconfig#strictNullChecks)。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">TypeScript 有几个可以开启或关闭的类型检查严格度标志，除非另有说明，我们所有的示例都将在开启所有标志的情况下编写。
+<ins>CLI<span class="space-inserted"> </span></ins>中的 [`strict`](/tsconfig#strict) 标志，或<ins>者</ins> [`tsconfig.json`](https://www.typescriptlang.org/docs/handbook/tsconfig-json.html) 中的 `&quot;strict&quot;: true`<ins><span class="space-inserted"> </span>会</ins>同时开启所有这些标志，但我们可以单独关闭它们。
+<ins>你需要</ins>了解的两个最<ins>重要</ins>的标志是 [`noImplicitAny`](/tsconfig#noImplicitAny) 和 [`strictNullChecks`](/tsconfig#strictNullChecks)。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #78</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">## `noImplicitAny`</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## `noImplicitAny`</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## `noImplicitAny`</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #79</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">Recall that in some places, TypeScript doesn&#x27;t try to infer types for us and instead falls back to the most lenient type: `any`.
+This isn&#x27;t the worst thing that can happen - after all, falling back to `any` is just the plain JavaScript experience anyway.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">回想一下，在某些地方，TypeScript 不会尝试为我们推断类型，而是退回到最宽松的类型：`any`。
+这并不是可能发生的最坏情况<del> </del>——<del> </del>毕竟，退回到 `any` <del>本来就</del>是<del>最纯粹</del>的 JavaScript 体验。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">回想一下，在某些地方，TypeScript 不会尝试为我们推断类型，而是退回到最宽松的类型：`any`。
+这并不是可能发生的最坏情况——毕竟，退回到 `any` <ins>无论如何都只</ins>是<ins>普通</ins>的 JavaScript 体验。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #80</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">However, using `any` often defeats the purpose of using TypeScript in the first place.
+The more typed your program is, the more validation and tooling you&#x27;ll get, meaning you&#x27;ll run into fewer bugs as you code.
+Turning on the [`noImplicitAny`](/tsconfig#noImplicitAny) flag will issue an error on any variables whose type is implicitly inferred as `any`.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">然而，使用 `any` 通常<del>会</del>违背<del>最开始</del>使用 TypeScript 的初衷。
+<del>您</del>的程序类型<del>化程度</del>越<del>高</del>，<del>您</del>获得的验证和工具支持就越多，这意味着<del>您</del>在编码时遇到的 bug 就会越少。
+开启 [`noImplicitAny`](/tsconfig#noImplicitAny) 标志将<del>会对</del>任何<del>其</del>类型被隐式推断为 `any` 的变量发<del>出</del>错误<del>提示</del>。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">然而，使用 `any` 通常<ins>在一开始就</ins>违背<ins>了</ins>使用 TypeScript 的初衷。
+<ins>你</ins>的程序类型<ins>定义得</ins>越<ins>完善</ins>，<ins>你</ins>获得的验证和工具支持就越多，这意味着<ins>你</ins>在编<ins>写代</ins>码时遇到的 bug 就会越少。
+开启 [`noImplicitAny`](/tsconfig#noImplicitAny) 标志将<ins>在</ins>任何类型被隐式推断为 `any` 的变量<ins>上引</ins>发错误。</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #81</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">## `strictNullChecks`</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## `strictNullChecks`</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    
+                    <div class="text-zh" style="margin-top:10px;">## `strictNullChecks`</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="block-item">
+            <div class="block-header">
+                <span>Block #82</span>
+            </div>
+            <div class="block-body">
+                <div class="col col-en">
+                    <h4>English Context</h4>
+                    <div class="text-en">By default, values like `null` and `undefined` are assignable to any other type.
+This can make writing some code easier, but forgetting to handle `null` and `undefined` is the cause of countless bugs in the world - some consider it a [billion dollar mistake](https://www.youtube.com/watch?v=ybrQvs4x0Ps)!
+The [`strictNullChecks`](/tsconfig#strictNullChecks) flag makes handling `null` and `undefined` more explicit, and _spares_ us from worrying about whether we _forgot_ to handle `null` and `undefined`.</div>
+                </div>
+                <div class="col col-baseline">
+                    <h4>Baseline Translation</h4>
+                    <div class="alert error">✘ 1 Error(s)</div>
+                    <div class="text-zh" style="margin-top:10px;">默认情况下，像 `null` 和 `undefined` 这样的值可以<del>赋值</del>给任何其他类型。
+这可以使编写某些代码<del>变得</del>更容易，但忘记处理 `null` 和 `undefined` 是世界上无数 bug 的根源<del> </del>——<del> </del>有些人<del>甚至将其视</del>为 [十亿美元的错误](https://www.youtube.com/watch?v=ybrQvs4x0Ps)！
+[`strictNullChecks`](/tsconfig#strictNullChecks) 标志使处理 `null` 和 `undefined` 更加显式，并<del>让</del>我们<del>免于</del>担心是否 <del>*</del>忘记<del>*</del> 了处理 `null` 和 `undefined`。</div>
+                </div>
+                <div class="col col-latest">
+                    <h4>Latest Iteration</h4>
+                    <div class="alert warn">▲ 1 Warning(s)</div><div class="warning-detail">• Glossary mismatch: English contains &#x27;any&#x27;, but Chinese translation contains neither &#x27;any&#x27; nor &#x27;any&#x27;.</div>
+                    <div class="text-zh" style="margin-top:10px;">默认情况下，像 `null` 和 `undefined` 这样的值可以<ins>分配</ins>给任何其他类型。
+这可以使编写某些代码更容易，但忘记处理 `null` 和 `undefined` 是世界上无数 bug 的根源——有些人<ins>认</ins>为<ins>这是</ins> [十亿美元的错误](https://www.youtube.com/watch?v=ybrQvs4x0Ps)！
+[`strictNullChecks`](/tsconfig#strictNullChecks) 标志使处理 `null` 和 `undefined` 更加显式，并<ins><span class="space-inserted"> </span>_免除_<span class="space-inserted"> </span>了</ins>我们担心是否 <ins>_</ins>忘记<ins>_</ins> 了处理 `null` 和 `undefined`。</div>
+                </div>
+            </div>
+        </div>
+        
+        </section>
+    </div>
+</body>
+</html>
