@@ -1,0 +1,14 @@
+{
+  "Conditional Types": "条件类型",
+  "Constraints": "约束",
+  "Distributive": "分布式",
+  "Inference": "推断",
+  "infer": "infer",
+  "Overloads": "重载",
+  "extends": "extends",
+  "never": "never",
+  "string": "string",
+  "any": "any",
+  "number": "number",
+  "boolean": "boolean"
+}

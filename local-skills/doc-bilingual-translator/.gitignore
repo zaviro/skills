@@ -1,0 +1,6 @@
+# 开发评估产物（每次 eval 运行重新生成，无需追踪）
+dev/evals/results/
+
+# Python 编译缓存
+scripts/__pycache__/
+dev/__pycache__/

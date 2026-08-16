@@ -1,0 +1,4 @@
+interface:
+  display_name: "Updating Plugin Model"
+  short_description: "Guide for updating plugin model integrations"
+  default_prompt: "Use $updating-plugin-model to update model mappings or model exposure in OpenCode, OpenClaw, or similar tools."

@@ -1,0 +1,35 @@
+{
+  "skill_name": "doc-bilingual-translator",
+  "evals": [
+    {
+      "id": 1,
+      "name": "basic-types-translation",
+      "prompt": "Translate the Markdown file dev/evals/test_cases/basic-types.md to a bilingual Markdown file, then validate the formatting using doc-bilingual-translator validation script.",
+      "expected_output": "A W3C-spacing compliant bilingual Markdown file, preserving code block formatting and translating all headers and paragraphs correctly with dynamic glossary mapping applied.",
+      "files": [
+        "dev/evals/test_cases/basic-types.md"
+      ],
+      "expectations": [
+        "Chinese translation is placed directly in the [zh] block of each :::block structure.",
+        "Reserved TypeScript keywords (e.g. string, number, boolean) remain untranslated in English.",
+        "No Markdown links or image URLs are modified or corrupted.",
+        "Correct space is inserted between Chinese characters and Western characters/numbers."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "conditional-types-translation",
+      "prompt": "Translate the Markdown file dev/evals/test_cases/conditional-types.md to a bilingual Markdown file, then validate the formatting using doc-bilingual-translator validation script.",
+      "expected_output": "A W3C-spacing compliant bilingual Markdown file, preserving conditional types code samples and translating technical sections correctly with glossary mapping applied.",
+      "files": [
+        "dev/evals/test_cases/conditional-types.md"
+      ],
+      "expectations": [
+        "Technical term 'Conditional Types' is translated using the designated glossary if provided.",
+        "All code blocks starting with triple backticks remain untouched outside :::block wrappers.",
+        "No sentences are omitted in the translated segments.",
+        "There are no missing spaces between CJK characters and Latin/numerical characters."
+      ]
+    }
+  ]
+}
