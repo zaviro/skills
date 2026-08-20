@@ -54,10 +54,13 @@ Handoff:
 - Validate locally: <observable behavior that must hold>
 - Unverified: <material assumption, environment dependency, risk, or blocker>
 - Depends on: <ref@oid only when dependency is not encoded by ancestry>
+- Lifecycle: ephemeral; eligible for retirement after verified integration
 ```
 
-`Validate locally` is normally required. Do not repeat the diff, file list,
-implementation steps, routine successful checks, generic rationale,
+`Validate locally` and `Lifecycle` are required. Preserve the exact lifecycle
+marker in any required Draft PR description. It records cleanup intent only and
+does not authorize closing a request or deleting a ref. Do not repeat the diff,
+file list, implementation steps, routine successful checks, generic rationale,
 alternative designs, or repository-standard validation commands. Mention a
 producer check only when its failure, omission, or environment changes the
 consumer's next action.
@@ -73,7 +76,12 @@ commit. Always report both immutable identities:
 ```text
 source: <repo-or-remote>#<candidate-ref>@<candidate-oid>
 base: <base-ref>@<base-oid-used>
+lifecycle: ephemeral; eligible for retirement after verified integration
+request: <draft-pr-url>; retirement=close
+head-ref: <candidate-ref>; retirement=delete
 ```
 
-The candidate and base OIDs are mandatory. Do not claim completion before the
-listed local acceptance behavior has been validated.
+The candidate and base OIDs are mandatory. Include `request` and `head-ref`
+only when a Draft PR exists. Closing the request and deleting its head ref are
+separate retirement actions; the receipt grants neither authority. Do not claim
+completion before the listed local acceptance behavior has been validated.
