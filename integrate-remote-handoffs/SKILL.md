@@ -32,10 +32,17 @@ Before mutation:
    recovery point.
 3. Preserve unrelated and unknown work. Stop when ownership cannot be
    established safely.
-4. Record every candidate's exact remote name and server object ID, then fetch
+4. Distinguish the current working tip from the planned candidate-integration
+   tip and record any unrelated descendants between them.
+5. Record every candidate's exact remote name and server object ID, then fetch
    only the required candidates.
-5. Recheck the server IDs after fetching so a stale tracking ref cannot define
+6. Recheck the server IDs after fetching so a stale tracking ref cannot define
    the integration.
+
+In a strictly read-only audit, do not fetch. Use a live remote lookup to compare
+the server object ID with any existing tracking ref, label tracking freshness
+and local object availability separately, and stop before integration when the
+required object is unavailable locally.
 
 Use parallel read-only reviews when candidates are independent. Isolate
 parallel writers with the repository's supported workspace mechanism before
@@ -48,6 +55,7 @@ Audit every candidate from its actual common ancestor, not only its tip. Record:
 | Field | Evidence |
 | --- | --- |
 | Source | Remote, exact ref, object ID, and freshness check |
+| Tracking | Live server ID, local tracking ID, and object availability |
 | Boundary | Logical changes and whether each can land or roll back alone |
 | Scope | Files, generated artifacts, imports, consumers, hosts, and services |
 | Intent | User-visible behavior and invariants the candidate claims |
@@ -91,6 +99,11 @@ repository-native operation that copies or replays audited logical changes onto
 the recorded local tip without modifying the source candidate. Record every new
 logical ID and its parent.
 
+Maintain a source-to-local coverage map. For every source logical change or
+material diff section, record whether it was preserved, adapted, or intentionally
+omitted, the destination local change, and the reason. Treat an unexplained
+missing source section as an integration failure.
+
 Adapt each local change to the consumer repository:
 
 - resolve both textual and semantic conflicts;
@@ -128,14 +141,18 @@ whose input changed. Do not publish a partially evidenced stack.
 Proceed only with explicit authority for the exact target and source refs.
 
 1. Refresh the target and all live candidates; stop on concurrent movement.
-2. Inspect the exact outgoing range, descriptions, conflicts, and final tree.
-3. Move only the authorized integration target to the verified local tip.
-4. Dry-run and push only that target with the version-control system's
+2. Reconfirm the intended integration tip rather than assuming the current
+   working tip is the publication target.
+3. Inspect the entire exact outgoing ancestor range, including unrelated
+   descendants, empty or undescribed changes, transient add/remove pairs,
+   conflicts, and the final tree.
+4. Move only the authorized integration target to the verified local tip.
+5. Dry-run and push only that target with the version-control system's
    lease/concurrency protection.
-5. Verify the server target equals the intended object.
-6. Delete consumed source candidates one at a time, using exact names and a
+6. Verify the server target equals the intended object.
+7. Delete consumed source candidates one at a time, using exact names and a
    dry run when available.
-7. Verify each source ref is absent before deleting the next.
+8. Verify each source ref is absent before deleting the next.
 
 Never force a target or bulk-delete refs unless the user explicitly authorized
 that exact effect and repository policy permits it. Source-ref deletion never
