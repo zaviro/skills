@@ -28,8 +28,10 @@ Repository-level directories should contain only genuinely cross-Skill infrastru
 - `doc-bilingual-translator`
 - `document-processor`
 - `find-skills`
+- `integrate-remote-handoffs`
 - `notebooklm-docs`
 - `proton-game-helper`
+- `remote-handoff`
 - `roadmap-parser`
 - `skill-creator`
 - `tavily-search`
