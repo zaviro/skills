@@ -1,0 +1,4 @@
+interface:
+  display_name: "Remote Handoff"
+  short_description: "Prepare a remote candidate for local validation"
+  default_prompt: "Use $remote-handoff to prepare this change as a remote candidate for authoritative local integration and validation."

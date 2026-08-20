@@ -1,74 +1,79 @@
 ---
 name: remote-handoff
-description: Prepare the current discussed project change in GitHub for later local jj integration and machine-specific validation. Use whenever the user invokes /remote-handoff, asks to send the current plan/minimal implementation to GitHub for local verification, or wants cloud work handed back as a remote branch/change. Create a remote candidate branch and leave only the context the local agent actually needs; never merge it remotely by default.
+description: Prepare one logical project change on a live remote candidate ref for later authoritative local integration and machine-specific validation. Use for explicit remote-handoff invocations or when current cloud work should be returned through GitHub without a remote merge.
 ---
 
 # Remote Handoff
 
-Turn the current conversation into a small remote candidate change that a local jj workflow can fetch, inspect, test on the real machine, rewrite if needed, and accept or discard.
+Turn the current discussed implementation into the smallest remote-backed
+proposal that a local consumer can audit, adapt, validate, accept, or discard.
+Never merge it remotely by default.
 
-## Resolve the target
+## Resolve the live base
 
-Infer the repository and base branch from the current conversation before doing anything else.
+Accept optional repository, base, or task-slug hints in the invocation. Infer
+missing values from the conversation and connected project, choosing the base
+in this order:
 
-Choose the base in this order:
-1. A branch explicitly named for the current work.
-2. The active integration branch clearly implied by the current discussion or repository workflow.
-3. The repository default branch when there is no stronger evidence.
+1. An explicitly named base for this work.
+2. The integration branch implied by repository policy or discussion.
+3. The repository default branch.
 
-Read the remote state first and branch from the latest tip of that base. Do not choose an unrelated feature branch merely because its commit timestamp is newer.
+Read the live remote and record the exact `<base-ref>@<base-oid>` before
+creating the candidate. Ask only when the repository or base cannot be resolved
+uniquely; do not ask for information available from the project or discussion.
 
-If the repository itself cannot be identified from the conversation, connected project context, or available checkout, do not guess.
+## Create one logical proposal
 
-## Create the candidate
+Create `cloud/<short-task-slug>` from the recorded base. Implement one smallest
+complete intent and exclude unrelated refactors, formatting churn, dependency
+updates, and speculative extras. Keep one commit when practical. Never open a
+PR unless the environment requires one; leave any required PR as Draft.
 
-Create a branch named `cloud/<short-task-slug>` from the resolved base tip.
+Reuse a remote ref only when its live object and purpose clearly belong to this
+same handoff. Never overwrite an unrelated or unexpectedly moved ref.
 
-Treat the branch as transport for one logical jj change:
-- implement the smallest complete version of the discussed solution;
-- avoid unrelated refactors, formatting churn, dependency updates, or speculative extras;
-- keep the final branch to one commit when practical; squash cloud exploration commits before handoff when that does not destroy information needed for review;
-- never merge the branch into the base remotely;
-- do not open a PR by default. If the environment requires a PR, leave it as Draft and do not merge it.
+## Validate only producer evidence
 
-If a branch for exactly the same current handoff already exists, update that branch instead of creating parallel variants. Otherwise use a distinct slug rather than overwriting unrelated work.
+Run cheap relevant checks available in the producer environment. Do not treat
+them as proof of machine-specific, hardware, service, networking, secret, or
+desktop behavior.
 
-## Validate only what the cloud can actually validate
+Describe local validation as observable acceptance behavior. Include a command
+only when it is non-obvious and cannot be derived from repository-local policy.
 
-Run cheap, relevant checks available in the remote environment, such as formatting, static analysis, unit tests, evaluation, or build checks.
+## Preserve only non-derivable context
 
-Do not treat cloud checks as proof of host-specific behavior. For machine configuration, hardware integration, services, desktop behavior, networking, secrets, or other environment-dependent work, explicitly leave the real validation to the local agent.
-
-## Leave the handoff in the commit description
-
-The commit itself is the durable handoff. Keep its description terse because the local agent can read the diff.
-
-Use this shape, omitting sections that add no information:
+Use this commit description shape and omit empty fields:
 
 ```text
 <short change summary>
 
 Handoff:
-- Context: <only non-obvious design intent or constraint needed to interpret the diff>
-- Validate locally: <specific commands and/or runtime behavior that must be checked on the real machine>
-- Unverified: <only unresolved assumption, environment dependency, risk, or blocker>
+- Intent: <non-obvious invariant or constraint>
+- Validate locally: <observable behavior that must hold>
+- Unverified: <material assumption, environment dependency, risk, or blocker>
+- Depends on: <ref@oid only when dependency is not encoded by ancestry>
 ```
 
-Rules:
-- `Validate locally` is normally required for this workflow.
-- Omit `Context` when the diff and commit title already make the intent obvious.
-- Omit `Unverified` when nothing material remains unverified beyond the listed local validation.
-- Do not narrate implementation details that are obvious from the diff.
-- Do not copy the whole conversation, generic rationale, or alternative designs into the commit.
-- Mention cloud checks only when their result materially changes what the local agent should do next.
+`Validate locally` is normally required. Do not repeat the diff, file list,
+implementation steps, routine successful checks, generic rationale,
+alternative designs, or repository-standard validation commands. Mention a
+producer check only when its failure, omission, or environment changes the
+consumer's next action.
 
-## Finish
+## Pin and report
 
-Push the candidate branch and report only the identifiers needed to retrieve it, normally:
+Before pushing, recheck the live base and candidate refs. Refresh a moved,
+unpinned base when intent and scope remain unchanged; otherwise stop and ask.
+
+After pushing, read the live candidate ref and verify that it equals the pushed
+commit. Always report both immutable identities:
 
 ```text
-branch: cloud/<short-task-slug>
-base: <base-branch>
+source: <repo-or-remote>#<candidate-ref>@<candidate-oid>
+base: <base-ref>@<base-oid-used>
 ```
 
-If useful, add the exact commit identifier. Do not claim the change is complete until the required local validation has happened.
+The candidate and base OIDs are mandatory. Do not claim completion before the
+listed local acceptance behavior has been validated.

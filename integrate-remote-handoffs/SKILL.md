@@ -1,172 +1,121 @@
 ---
 name: integrate-remote-handoffs
-description: Audit and integrate one or more remote handoff candidates into current local work while preserving logical change boundaries, choosing independent or joint validation, publishing an authorized integration target, and retiring consumed remote candidates. Use when work arrives through temporary branches, bookmarks, refs, patches, or forks from another machine, cloud workspace, or agent and Codex must inspect, adapt, validate, accept, publish, or clean up those handoffs.
+description: Discover, audit, adapt, validate, and optionally retire one or more handoff candidates backed by live remote refs. Use for explicit integrate-remote-handoffs invocations or when temporary branches, bookmarks, or refs from another machine, cloud workspace, fork, or agent must be consumed into authoritative local work.
 ---
 
 # Integrate Remote Handoffs
 
-Consume arbitrary remote handoff candidates without assuming a branch naming
-scheme, version-control system, deployment platform, or candidate count. Treat
-repository-local instructions and specialized version-control, build,
-deployment, and recovery skills as authoritative.
+Consume remote-backed implementation proposals without treating them as
+authoritative local solutions. Delegate version-control mechanics, validation,
+deployment, activation, and recovery to repository-local instructions.
 
-## Establish authority and a stable baseline
+## Resolve the minimal invocation
 
-Separate authorization for these effects:
+Accept zero or more refs, URLs, or `ref@oid` locators as optional invocation
+text. Resolve candidates in this order:
 
-- reading or fetching remote state;
-- creating or rewriting local changes;
-- moving or publishing an integration target;
-- deleting source candidates;
-- deploying or activating the result.
+1. Explicit locators.
+2. The latest handoff receipt in the conversation.
+3. Exactly one candidate identified by repository remote convention.
 
-Do not infer publication, deletion, force-update, deployment, or cross-machine
-authority from a request to inspect or integrate.
+A ref alone is sufficient. Infer its base, diff, and validation policy. Ask for
+an exact locator only when no candidate or several ambiguous candidates remain.
 
-Before mutation:
+Record every live candidate ref and object ID, its actual base, and the intended
+local integration tip. An explicit OID pins the request; ask before substituting
+a different live tip.
 
-1. Read repository instructions and route to its version-control and validation
-   skills.
-2. Record the working tree, current logical change, parent, local unpublished
-   stack, workspaces, bookmarks or branches, remotes, and operation or reflog
-   recovery point.
-3. Preserve unrelated and unknown work. Stop when ownership cannot be
-   established safely.
-4. Distinguish the current working tip from the planned candidate-integration
-   tip and record any unrelated descendants between them.
-5. Record every candidate's exact remote name and server object ID, then fetch
-   only the required candidates.
-6. Recheck the server IDs after fetching so a stale tracking ref cannot define
-   the integration.
+Integration permits live lookup, exact fetch, owned local changes, and
+repository-authorized validation. Publication, source deletion, force update,
+cross-machine writes, deployment, and activation require user or repository
+authority.
 
-In a strictly read-only audit, do not fetch. Use a live remote lookup to compare
-the server object ID with any existing tracking ref, label tracking freshness
-and local object availability separately, and stop before integration when the
-required object is unavailable locally.
+## Triage quickly and in parallel
 
-Use parallel read-only reviews when candidates are independent. Isolate
-parallel writers with the repository's supported workspace mechanism before
-allowing them to edit or run snapshotting version-control commands.
+Compare each candidate with its common ancestor, local unpublished work, and
+the other candidates. Inspect the complete diff and screen for:
 
-## Build a candidate ledger
+- path, rename, delete, generated-file, and textual overlap;
+- shared imports, consumers, services, and user-visible behavior;
+- credentials, licenses, locks, migrations, destructive effects, and control
+  channels;
+- assumptions that can differ between producer and consumer environments.
 
-Audit every candidate from its actual common ancestor, not only its tip. Record:
+Use one read-only reviewer per non-trivial independent candidate when that
+reduces latency, plus a cross-candidate review when shared consumers are not
+obvious. Pin every review to exact OIDs. Keep baseline ownership, mutations,
+user questions, and final synthesis with the coordinating agent.
 
-| Field | Evidence |
-| --- | --- |
-| Source | Remote, exact ref, object ID, and freshness check |
-| Tracking | Live server ID, local tracking ID, and object availability |
-| Boundary | Logical changes and whether each can land or roll back alone |
-| Scope | Files, generated artifacts, imports, consumers, hosts, and services |
-| Intent | User-visible behavior and invariants the candidate claims |
-| Relationship | Dependencies and semantic or textual overlap with local work and other candidates |
-| Risk | Credentials, licenses, input locks, migrations, destructive effects, control channels |
-| Validation | Static checks, builds, runtime checks, deployment, and recovery needed |
+Treat a clear, low-risk set as the fast path: integrate it promptly and let the
+version-control system expose textual conflicts. Escalate the audit only for
+ambiguous intent, material interaction, risky effects, unclear ownership, or a
+failed combined check.
 
-Inspect full diffs and change descriptions. A clean textual merge is not
-evidence of semantic compatibility. Check assumptions that may differ between
-the producer and consumer environments, including tool versions, option names,
-package ownership, import graphs, permissions, and ignored files.
+Serialize mutation by default. Parallel writers require repository-supported
+workspace isolation and disjoint ownership.
 
-## Choose integration and validation shape
+## Choose boundaries and adapt locally
 
-Classify the candidates before applying them:
+Preserve separate changes when they can reasonably land or roll back alone.
+Apply dependencies in order; combine only inseparable intent. An intentional
+merge is appropriate only when independent ancestry is itself useful, not
+merely to share one expensive check.
 
-| Relationship | Integration | Validation |
-| --- | --- | --- |
-| Independent, low overlap | Preserve separate logical changes in a chosen order | Share expensive final checks when behavior remains attributable |
-| Ordered dependency | Apply in dependency order and retain useful boundaries | Validate independently landable intermediate states, then the combination |
-| Inseparable intent | Combine only when separate landing or rollback is not reasonable | Validate the combined boundary |
-| Conflict or high-risk interaction | Integrate incrementally and resolve explicitly | Validate in stages to isolate failures |
+Prefer repository-native copy or replay operations that preserve the remote
+proposal while creating owned local changes. Continue the same change identity
+only when source ownership, mutability, and repository policy make that intent
+explicit.
 
-Do not create one change per remote ref mechanically. Split a candidate that
-contains several independently landable intents; combine candidates only when
-the repository's change-boundary test requires it.
+For a straightforward replay, record only intentional differences from the
+source. Use a full preserved/adapted/omitted coverage map when splitting,
+dropping, or materially translating source behavior. An unexplained material
+omission is an integration failure.
 
-One expensive build, test deployment, or activation may cover several
-candidates only when:
+Resolve technical conflicts autonomously when one repository-compliant answer
+preserves the behavior contract. Keep compatibility fixes in the boundary whose
+behavior requires them.
 
-- one final candidate tree contains every integrated change;
-- no candidate requires observation of an intermediate runtime state;
-- the final check reaches every affected consumer;
-- candidate-specific behavior checks still identify what passed;
-- failure can be isolated without deleting or hiding a candidate.
+## Validate through a feedback loop
 
-## Integrate into owned local changes
+Run boundary-local formatting and cheap checks, then validate the exact final
+tree according to repository policy. Share an expensive final check only when
+it reaches every affected consumer, no intermediate runtime observation is
+required, and candidate-specific behavior remains attributable.
 
-Preserve source refs and source objects while integrating. Prefer the
-repository-native operation that copies or replays audited logical changes onto
-the recorded local tip without modifying the source candidate. Record every new
-logical ID and its parent.
+When evidence fails, classify the cause as source proposal, local adaptation,
+candidate interaction, or environment. Fix the owning boundary and rerun only
+checks whose inputs changed, plus the required final interaction check. Continue
+autonomously while intent remains clear, scope is unchanged, and recovery is
+available.
 
-Maintain a source-to-local coverage map. For every source logical change or
-material diff section, record whether it was preserved, adapted, or intentionally
-omitted, the destination local change, and the reason. Treat an unexplained
-missing source section as an integration failure.
+## Ask only at material decision gates
 
-Adapt each local change to the consumer repository:
+After bounded read-only investigation, ask one focused question when:
 
-- resolve both textual and semantic conflicts;
-- preserve one declaration owner for packages, services, and generated files;
-- retain unaffected consumers of shared files;
-- translate version-specific configuration without weakening behavior;
-- keep credentials, state-version, lockfile, licensing, and host-scope policy;
-- place compatibility repairs in the change whose behavior requires them.
+- the repository, candidate, integration tip, or local ownership is ambiguous;
+- a pinned OID differs from the live ref;
+- resolution requires choosing between incompatible user-visible behaviors;
+- integration must expand scope, introduce a destructive or migration effect,
+  or omit material source behavior;
+- acceptance has several plausible meanings;
+- required evidence depends on unavailable user-controlled state.
 
-After each mutation, inspect the exact diff, descendants, conflicts, workspaces,
-and recovery log. Never drop a candidate silently because the combined result
-fails.
-
-## Validate with an evidence ledger
-
-Run boundary-local formatting and cheap checks in the owning change. Then
-validate the ordered final tree according to repository policy.
-
-Track for every candidate:
-
-- structural or static checks;
-- required consumer evaluations;
-- complete builds;
-- task-specific behavior checks;
-- interaction checks with other candidates;
-- deployment or activation state;
-- recovery evidence and remaining uncertainty.
-
-If a shared final check fails, isolate whether the cause is one candidate, its
-adaptation, or an interaction. Fix the owning boundary and rerun every check
-whose input changed. Do not publish a partially evidenced stack.
+Do not ask for an ordinary textual conflict, locally derivable context, a stale
+tracking ref with a clear live source, or a policy-compliant syntax adaptation.
+When authority for a later side effect is absent, finish the last safe local
+boundary and report that pending effect instead of interrupting earlier work.
 
 ## Publish, verify, then retire
 
-Proceed only with explicit authority for the exact target and source refs.
+Follow repository policy for any authorized publication. Refresh target and
+source refs, stop on concurrent movement, freeze the exact integration tip,
+inspect its outgoing ancestry, and push only the authorized target with lease
+protection. Verify the server object before retiring sources.
 
-1. Refresh the target and all live candidates; stop on concurrent movement.
-2. Reconfirm the intended integration tip rather than assuming the current
-   working tip is the publication target.
-3. Inspect the entire exact outgoing ancestor range, including unrelated
-   descendants, empty or undescribed changes, transient add/remove pairs,
-   conflicts, and the final tree.
-4. Move only the authorized integration target to the verified local tip.
-5. Dry-run and push only that target with the version-control system's
-   lease/concurrency protection.
-6. Verify the server target equals the intended object.
-7. Delete consumed source candidates one at a time, using exact names and a
-   dry run when available.
-8. Verify each source ref is absent before deleting the next.
+Delete only authorized source refs, one at a time, after the published target
+is verified. Source deletion never authorizes discarding local changes or
+recovery history.
 
-Never force a target or bulk-delete refs unless the user explicitly authorized
-that exact effect and repository policy permits it. Source-ref deletion never
-authorizes discarding integrated local changes or recovery history.
-
-## Report the integration
-
-Return:
-
-- source refs and recorded object IDs;
-- resulting logical changes and order;
-- adaptations made during consumption;
-- per-candidate and combined validation evidence;
-- deployment or activation result and recovery point;
-- published target and verified server object;
-- deleted and retained source refs;
-- unresolved risks or intentionally skipped checks.
+Report source/base OIDs, resulting changes and intentional adaptations,
+per-candidate and combined evidence, published target if any, retired refs, and
+remaining uncertainty.
